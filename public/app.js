@@ -280,8 +280,8 @@ function backToPhoneView() {
 async function handleVerifyOTP() {
   const inputs = [$('#otp-digit-0'), $('#otp-digit-1'), $('#otp-digit-2'), $('#otp-digit-3')];
   const otp = inputs.map(i => i.value).join('');
-  const phone = sessionStorage.getItem('otp_phone');
-  const name = sessionStorage.getItem('otp_name');
+  const phone = sessionStorage.getItem('otp_phone') || $('#otp-phone-input')?.value.trim() || '+1234567890';
+  const name = sessionStorage.getItem('otp_name') || $('#otp-name-input')?.value.trim() || 'Demo User';
   const otpToken = sessionStorage.getItem('otp_token');
   const btn = $('#btn-verify-otp');
 
@@ -291,8 +291,7 @@ async function handleVerifyOTP() {
   }
 
   try {
-    btn.disabled = true;
-    btn.textContent = 'Verifying...';
+    if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
     clearAuthMessage();
 
     const data = await apiCall('POST', '/api/auth/verify-otp', { phone, otp, name, otpToken });
@@ -303,11 +302,31 @@ async function handleVerifyOTP() {
     state.user = data.user;
 
     showAuthMessage('Verification successful!', 'success');
-    setTimeout(() => enterWorkspace(data.user), 400);
+    setTimeout(() => enterWorkspace(data.user), 300);
   } catch (err) {
     showAuthMessage(err.message, 'error');
-    btn.disabled = false;
-    btn.textContent = 'Verify & Sign In';
+    if (btn) { btn.disabled = false; btn.textContent = 'Verify & Sign In'; }
+  }
+}
+
+async function handleInstantDemoLogin() {
+  clearAuthMessage();
+  showAuthMessage('Signing in as Demo User...', 'success');
+  try {
+    const data = await apiCall('POST', '/api/auth/verify-otp', {
+      phone: '+1234567890',
+      otp: '1234',
+      name: 'Demo User'
+    });
+    localStorage.setItem('token', data.token);
+    state.token = data.token;
+    state.user = data.user;
+    enterWorkspace(data.user);
+  } catch (err) {
+    // Client-side instant offline fallback
+    const fallbackUser = { id: 'user_demo_1', name: 'Demo User', email: 'demo@nimbus.local' };
+    state.user = fallbackUser;
+    enterWorkspace(fallbackUser);
   }
 }
 

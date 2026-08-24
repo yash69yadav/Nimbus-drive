@@ -1,689 +1,1105 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#6964db">
-  <title>Nimbus Drive - Cloud Media & File Storage</title>
-  <link rel="stylesheet" href="styler.css">
-  <style>
-    /* Auth Modal Overlay when signed out */
-    .auth-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 20px;
-    }
-    .auth-card {
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-      width: 100%;
-      max-width: 420px;
-      padding: 36px 32px;
-      animation: authPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes authPop {
-      from { opacity: 0; transform: scale(0.96) translateY(10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .auth-brand {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-family: "Plus Jakarta Sans", sans-serif;
-      font-size: 24px;
-      font-weight: 800;
-      color: #20233a;
-      margin-bottom: 6px;
-    }
-    .auth-brand small {
-      color: #6964db;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-    }
-    .auth-subtitle {
-      font-size: 13px;
-      color: #7f849b;
-      text-align: center;
-      margin-bottom: 22px;
-    }
-    .auth-tabs {
-      display: flex;
-      border-radius: 8px;
-      background: #f1f3f9;
-      padding: 4px;
-      margin-bottom: 20px;
-    }
-    .auth-tab {
-      flex: 1;
-      text-align: center;
-      padding: 9px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      color: #7f849b;
-      border: none;
-      background: none;
-      transition: all 0.2s;
-    }
-    .auth-tab.active {
-      background: #ffffff;
-      color: #6964db;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    .auth-field {
-      margin-bottom: 16px;
-      text-align: left;
-    }
-    .auth-field label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #333;
-    }
-    .auth-field input {
-      width: 100%;
-      min-height: 42px;
-      padding: 0 14px;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 14px;
-      background: #fbfbfd;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .auth-field input:focus {
-      border-color: #6964db;
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(105, 100, 219, 0.15);
-    }
-    .btn-auth-primary {
-      width: 100%;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-      box-shadow: 0 4px 14px rgba(105, 100, 219, 0.3);
-    }
-    .btn-auth-primary:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(105, 100, 219, 0.4);
-    }
-    .btn-auth-primary:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-    .btn-auth-secondary {
-      width: 100%;
-      min-height: 38px;
-      background: #f1f3f9;
-      color: #4a5568;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: background 0.2s;
-    }
-    .btn-auth-secondary:hover {
-      background: #e2e8f0;
-    }
-    .otp-grid {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 20px 0;
-    }
-    .otp-input-box {
-      width: 52px;
-      height: 54px;
-      text-align: center;
-      font-size: 24px;
-      font-weight: 700;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      background: #f8fafc;
-      transition: all 0.2s;
-    }
-    .otp-input-box:focus {
-      border-color: #6964db;
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(105, 100, 219, 0.15);
-      outline: none;
-    }
-    .auth-alert {
-      padding: 12px 14px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 13px;
-      line-height: 1.4;
-      display: none;
-    }
-    .auth-alert.error {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fca5a5;
-      display: block;
-    }
-    .auth-alert.success {
-      background: #dcfce7;
-      color: #166534;
-      border: 1px solid #86efac;
-      display: block;
-    }
-    .timer-info {
-      text-align: center;
-      font-size: 12px;
-      color: #7f849b;
-      margin-top: 12px;
-    }
-    .demo-pill {
-      margin-top: 16px;
-      padding: 10px 12px;
-      background: #f4f4ff;
-      border: 1px dashed #c5c2f7;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #5049c9;
-      text-align: center;
-    }
-    .demo-pill strong {
-      font-size: 13px;
-      letter-spacing: 1px;
-    }
-    .demo-autofill {
-      color: #6964db;
-      font-weight: 700;
-      text-decoration: underline;
-      cursor: pointer;
-      margin-left: 6px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6964db" />
+    <title>Nimbus Drive - Cloud Media & File Storage</title>
+    <link rel="stylesheet" href="styler.css" />
+    <style>
+      /* Auth Modal Overlay when signed out */
+      .auth-overlay {=
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+      }
+      .auth-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        width: 100%;
+        max-width: 420px;
+        padding: 36px 32px;
+        animation: authPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes authPop {
+        from { opacity: 0; transform: scale(0.96) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      .auth-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        font-size: 24px;
+        font-weight: 800;
+        color: #20233a;
+        margin-bottom: 6px;
+      }
+      .auth-brand small {
+        color: #6964db;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+      }
+      .auth-subtitle {
+        font-size: 13px;
+        color: #7f849b;
+        text-align: center;
+        margin-bottom: 22px;
+      }
+      .auth-tabs {
+        display: flex;
+        border-radius: 8px;
+        background: #f1f3f9;
+        padding: 4px;
+        margin-bottom: 20px;
+      }
+      .auth-tab {
+        flex: 1;
+        text-align: center;
+        padding: 9px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #7f849b;
+        border: none;
+        background: none;
+        transition: all 0.2s;
+      }
+      .auth-tab.active {
+        background: #ffffff;
+        color: #6964db;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .auth-field {
+        margin-bottom: 16px;
+        text-align: left;
+      }
+      .auth-field label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+      }
+      .auth-field input {
+        width: 100%;
+        min-height: 42px;
+        padding: 0 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #fbfbfd;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .auth-field input:focus {
+        border-color: #6964db;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(105, 100, 219, 0.15);
+      }
+      .btn-auth-primary {
+        width: 100%;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+        box-shadow: 0 4px 14px rgba(105, 100, 219, 0.3);
+      }
+      .btn-auth-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(105, 100, 219, 0.4);
+      }
+      .btn-auth-primary:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+      .btn-auth-secondary {
+        width: 100%;
+        min-height: 38px;
+        background: #f1f3f9;
+        color: #4a5568;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.2s;
+      }
+      .btn-auth-secondary:hover {
+        background: #e2e8f0;
+      }
+      .otp-grid {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin: 20px 0;
+      }
+      .otp-input-box {
+        width: 52px;
+        height: 54px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: 700;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        background: #f8fafc;
+        transition: all 0.2s;
+      }
+      .otp-input-box:focus {
+        border-color: #6964db;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(105, 100, 219, 0.15);
+        outline: none;
+      }
+      .auth-alert {
+        padding: 12px 14px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        line-height: 1.4;
+        display: none;
+      }
+      .auth-alert.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+        display: block;
+      }
+      .auth-alert.success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+        display: block;
+      }
+      .timer-info {
+        text-align: center;
+        font-size: 12px;
+        color: #7f849b;
+        margin-top: 12px;
+      }
+      .demo-pill {
+        margin-top: 16px;
+        padding: 10px 12px;
+        background: #f4f4ff;
+        border: 1px dashed #c5c2f7;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #5049c9;
+        text-align: center;
+      }
+      .demo-pill strong {
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .demo-autofill {
+        color: #6964db;
+        font-weight: 700;
+        text-decoration: underline;
+        cursor: pointer;
+        margin-left: 6px;
+      }
 
-    /* Filter Chips */
-    .filter-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 14px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-    .filter-chip {
-      padding: 5px 12px;
-      background: #ffffff;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s ease;
-    }
-    .filter-chip:hover {
-      border-color: var(--purple);
-      color: var(--purple-dark);
-    }
-    .filter-chip.active {
-      background: var(--purple-soft);
-      border-color: var(--purple);
-      color: var(--purple-dark);
-    }
+      /* Filter Chips */
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 14px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .filter-chip {
+        padding: 5px 12px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+      .filter-chip:hover {
+        border-color: var(--purple);
+        color: var(--purple-dark);
+      }
+      .filter-chip.active {
+        background: var(--purple-soft);
+        border-color: var(--purple);
+        color: var(--purple-dark);
+      }
 
-    /* File Preview Modal Styles */
-    .preview-modal {
-      width: min(880px, calc(100vw - 32px));
-      max-height: calc(100vh - 40px);
-      display: flex;
-      flex-direction: column;
-      padding: 24px;
-    }
-    .preview-body {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8fafc;
-      border-radius: 10px;
-      overflow: hidden;
-      min-height: 360px;
-      max-height: 60vh;
-      margin: 16px 0;
-    }
-    .preview-body img {
-      max-width: 100%;
-      max-height: 56vh;
-      object-fit: contain;
-      border-radius: 6px;
-    }
-    .preview-body iframe {
-      width: 100%;
-      height: 56vh;
-      border: none;
-    }
-    .preview-body video, .preview-body audio {
-      max-width: 90%;
-      border-radius: 8px;
-    }
-    .preview-code {
-      width: 100%;
-      height: 56vh;
-      padding: 16px;
-      overflow: auto;
-      font-family: monospace;
-      font-size: 13px;
-      line-height: 1.5;
-      background: #1e1e2e;
-      color: #cdd6f4;
-      border-radius: 8px;
-      text-align: left;
-    }
+      /* File Preview Modal Styles */
+      .preview-modal {
+        width: min(880px, calc(100vw - 32px));
+        max-height: calc(100vh - 40px);
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+      }
+      .preview-body {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        border-radius: 10px;
+        overflow: hidden;
+        min-height: 360px;
+        max-height: 60vh;
+        margin: 16px 0;
+      }
+      .preview-body img {
+        max-width: 100%;
+        max-height: 56vh;
+        object-fit: contain;
+        border-radius: 6px;
+      }
+      .preview-body iframe {
+        width: 100%;
+        height: 56vh;
+        border: none;
+      }
+      .preview-body video, .preview-body audio {
+        max-width: 90%;
+        border-radius: 8px;
+      }
+      .preview-code {
+        width: 100%;
+        height: 56vh;
+        padding: 16px;
+        overflow: auto;
+        font-family: monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        background: #1e1e2e;
+        color: #cdd6f4;
+        border-radius: 8px;
+        text-align: left;
+      }
 
-    /* Activity Log List */
-    .activity-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .activity-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: #ffffff;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      font-size: 13px;
-    }
-    .activity-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font-size: 14px;
-      background: var(--purple-soft);
-      color: var(--purple);
-    }
-    .activity-time {
-      margin-left: auto;
-      font-size: 11px;
-      color: var(--muted);
-    }
+      /* Activity Log List */
+      .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      .activity-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        background: var(--purple-soft);
+        color: var(--purple);
+      }
+      .activity-time {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--muted);
+      }
 
-    /* Version History List */
-    .version-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-      font-size: 13px;
-    }
-    .version-item:last-child {
-      border-bottom: none;
-    }
-    .version-badge {
-      background: var(--purple-soft);
-      color: var(--purple-dark);
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
-  </style>
-</head>
-<body>
-  <!-- Auth Overlay (Shown when signed out) -->
-  <div id="auth-overlay" class="auth-overlay">
-    <div class="auth-card">
-      <div class="auth-brand">
-        <span class="brand-mark"><i></i><i></i><i></i></span>
-        Nimbus <small>DRIVE</small>
-      </div>
-      <p class="auth-subtitle" id="auth-subtitle">Welcome back! Sign in to access your media & files.</p>
-
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tab-otp" onclick="switchAuthTab('otp')">Phone OTP</button>
-        <button class="auth-tab" id="tab-email" onclick="switchAuthTab('email')">Email & Password</button>
-      </div>
-
-      <div id="auth-message" class="auth-alert"></div>
-
-      <!-- OTP Form Step 1: Send OTP -->
-      <div id="otp-phone-view">
-        <div class="auth-field">
-          <label for="otp-phone-input">Phone Number</label>
-          <input id="otp-phone-input" type="tel" placeholder="+1 234 567 8900" value="+1234567890" />
+      /* Version History List */
+      .version-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 13px;
+      }
+      .version-item:last-child {
+        border-bottom: none;
+      }
+      .version-badge {
+        background: var(--purple-soft);
+        color: var(--purple-dark);
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Auth Overlay (Shown when signed out) -->
+    <div id="auth-overlay" class="auth-overlay">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <span class="brand-mark"><i></i><i></i><i></i></span>
+          Nimbus <small>DRIVE</small>
         </div>
-        <div class="auth-field">
-          <label for="otp-name-input">Your Full Name</label>
-          <input id="otp-name-input" type="text" placeholder="John Doe" value="Demo User" />
-        </div>
-        <button class="btn-auth-primary" id="btn-send-otp" onclick="handleSendOTP()">Send OTP Code</button>
-      </div>
-
-      <!-- OTP Form Step 2: Verify OTP -->
-      <div id="otp-verify-view" style="display: none;">
-        <p style="text-align: center; font-size: 13px; color: #7f849b; margin-bottom: 6px;">
-          Enter the 4-digit code sent to your phone
+        <p class="auth-subtitle" id="auth-subtitle">
+          Welcome back! Sign in to access your media & files.
         </p>
-        <div class="otp-grid">
-          <input type="text" maxlength="1" class="otp-input-box" id="otp-digit-0" inputmode="numeric" autocomplete="one-time-code">
-          <input type="text" maxlength="1" class="otp-input-box" id="otp-digit-1" inputmode="numeric">
-          <input type="text" maxlength="1" class="otp-input-box" id="otp-digit-2" inputmode="numeric">
-          <input type="text" maxlength="1" class="otp-input-box" id="otp-digit-3" inputmode="numeric">
-        </div>
-        <button class="btn-auth-primary" id="btn-verify-otp" onclick="handleVerifyOTP()">Verify & Sign In</button>
-        <button class="btn-auth-secondary" onclick="backToPhoneView()">Back to Phone</button>
-        <div class="timer-info">Code expires in: <strong id="otp-countdown">60</strong>s</div>
-        <div class="demo-pill" id="demo-pill" style="display: none;">
-          Demo Code: <strong id="demo-code-val"></strong>
-          <span class="demo-autofill" onclick="autoFillDemoOtp()">Auto-Fill</span>
-        </div>
-      </div>
 
-      <!-- Email / Password Form -->
-      <div id="email-auth-view" style="display: none;">
-        <div class="auth-field">
-          <label for="email-input">Email Address</label>
-          <input id="email-input" type="email" placeholder="you@company.com" value="test@example.com" />
+        <div class="auth-tabs">
+          <button
+            class="auth-tab active"
+            id="tab-otp"
+            onclick="switchAuthTab('otp')"
+          >
+            Phone OTP
+          </button>
+          <button
+            class="auth-tab"
+            id="tab-email"
+            onclick="switchAuthTab('email')"
+          >
+            Email & Password
+          </button>
         </div>
-        <div class="auth-field">
-          <label for="password-input">Password</label>
-          <input id="password-input" type="password" placeholder="••••••••" value="password123" />
+
+        <div id="auth-message" class="auth-alert"></div>
+
+        <!-- OTP Form Step 1: Send OTP -->
+        <div id="otp-phone-view">
+          <div class="auth-field">
+            <label for="otp-phone-input">Phone Number</label>
+            <input
+              id="otp-phone-input"
+              type="tel"
+              placeholder="+1 234 567 8900"
+              value="+1234567890"
+            />
+          </div>
+          <div class="auth-field">
+            <label for="otp-name-input">Your Full Name</label>
+            <input
+              id="otp-name-input"
+              type="text"
+              placeholder="John Doe"
+              value="Demo User"
+            />
+          </div>
+          <button
+            class="btn-auth-primary"
+            id="btn-send-otp"
+            onclick="handleSendOTP()"
+          >
+            Send OTP Code
+          </button>
         </div>
-        <div class="auth-field" id="register-name-field" style="display: none;">
-          <label for="register-name-input">Full Name</label>
-          <input id="register-name-input" type="text" placeholder="John Doe" />
+
+        <!-- OTP Form Step 2: Verify OTP -->
+        <div id="otp-verify-view" style="display: none">
+          <p
+            style="
+              text-align: center;
+              font-size: 13px;
+              color: #7f849b;
+              margin-bottom: 6px;
+            "
+          >
+            Enter the 4-digit code sent to your phone
+          </p>
+          <div class="otp-grid">
+            <input
+              type="text"
+              maxlength="1"
+              class="otp-input-box"
+              id="otp-digit-0"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+            />
+            <input
+              type="text"
+              maxlength="1"
+              class="otp-input-box"
+              id="otp-digit-1"
+              inputmode="numeric"
+            />
+            <input
+              type="text"
+              maxlength="1"
+              class="otp-input-box"
+              id="otp-digit-2"
+              inputmode="numeric"
+            />
+            <input
+              type="text"
+              maxlength="1"
+              class="otp-input-box"
+              id="otp-digit-3"
+              inputmode="numeric"
+            />
+          </div>
+          <button
+            class="btn-auth-primary"
+            id="btn-verify-otp"
+            onclick="handleVerifyOTP()"
+          >
+            Verify & Sign In
+          </button>
+          <button class="btn-auth-secondary" onclick="backToPhoneView()">
+            Back to Phone
+          </button>
+          <div class="timer-info">
+            Code expires in: <strong id="otp-countdown">60</strong>s
+          </div>
+          <div class="demo-pill" id="demo-pill" style="display: none">
+            Demo Code: <strong id="demo-code-val"></strong>
+            <span class="demo-autofill" onclick="autoFillDemoOtp()"
+              >Auto-Fill</span
+            >
+          </div>
         </div>
-        <button class="btn-auth-primary" id="btn-email-auth" onclick="handleEmailAuth()">Sign In</button>
-        <button class="btn-auth-secondary" id="btn-toggle-register" onclick="toggleRegisterMode()">Need an account? Register</button>
+
+        <!-- Email / Password Form -->
+        <div id="email-auth-view" style="display: none">
+          <div class="auth-field">
+            <label for="email-input">Email Address</label>
+            <input
+              id="email-input"
+              type="email"
+              placeholder="you@company.com"
+              value="test@example.com"
+            />
+          </div>
+          <div class="auth-field">
+            <label for="password-input">Password</label>
+            <input
+              id="password-input"
+              type="password"
+              placeholder="••••••••"
+              value="password123"
+            />
+          </div>
+          <div
+            class="auth-field"
+            id="register-name-field"
+            style="display: none"
+          >
+            <label for="register-name-input">Full Name</label>
+            <input
+              id="register-name-input"
+              type="text"
+              placeholder="John Doe"
+            />
+          </div>
+          <button
+            class="btn-auth-primary"
+            id="btn-email-auth"
+            onclick="handleEmailAuth()"
+          >
+            Sign In
+          </button>
+          <button
+            class="btn-auth-secondary"
+            id="btn-toggle-register"
+            onclick="toggleRegisterMode()"
+          >
+            Need an account? Register
+          </button>
+        </div>
+
+        <!-- Instant 1-Click Demo Login -->
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #e2e8f0; text-align: center;">
+          <button class="btn-auth-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);" onclick="handleInstantDemoLogin()">
+            ⚡ Instant 1-Click Demo Login
+          </button>
+          <small style="display: block; margin-top: 6px; font-size: 11px; color: #7f849b;">For recruiters & quick testing (no form needed)</small>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Nimbus Professional Workspace App Shell -->
-  <div class="app-shell" id="app-shell">
-    <!-- Left Navigation Sidebar -->
-    <aside class="sidebar">
-      <a class="brand" href="#">
-        <span class="brand-mark"><i></i><i></i><i></i></span>
-        Nimbus <small>DRIVE</small>
-      </a>
+    <!-- Nimbus Professional Workspace App Shell -->
+    <div class="app-shell" id="app-shell">
+      <!-- Left Navigation Sidebar -->
+      <aside class="sidebar">
+        <a class="brand" href="#">
+          <span class="brand-mark"><i></i><i></i><i></i></span>
+          Nimbus <small>DRIVE</small>
+        </a>
 
-      <!-- + New Action Button & Dropdown -->
-      <button class="create-button" id="new-button" type="button" aria-haspopup="true">
-        <span>+</span> New
-      </button>
-      <div class="new-menu" id="new-menu" hidden>
-        <button data-action="new-folder" type="button"><span>📁</span> New folder</button>
-        <button data-action="upload" type="button"><span>⬆</span> Upload files</button>
-      </div>
-
-      <!-- Navigation Views -->
-      <nav class="nav-menu">
-        <button class="nav-item active" data-view="drive" type="button">
-          <span>📁</span> My Drive
+        <!-- + New Action Button & Dropdown -->
+        <button
+          class="create-button"
+          id="new-button"
+          type="button"
+          aria-haspopup="true"
+        >
+          <span>+</span> New
         </button>
-        <button class="nav-item" data-view="recent" type="button">
-          <span>◷</span> Recent
-        </button>
-        <button class="nav-item" data-view="starred" type="button">
-          <span>⭐</span> Starred
-        </button>
-        <button class="nav-item" data-view="activity" type="button">
-          <span>🕒</span> Activity Log
-        </button>
-        <button class="nav-item" data-view="trash" type="button">
-          <span>♲</span> Trash
-        </button>
-      </nav>
-
-      <!-- Dynamic Storage Calculator Card -->
-      <div class="storage-card">
-        <div><span>Storage</span><strong id="storage-used">0 KB</strong></div>
-        <div class="storage-track"><i id="storage-progress" style="width: 2%;"></i></div>
-        <p>of 5 GB cloud storage</p>
-        <button id="manage-storage" type="button" onclick="showStorageModal()">Storage details</button>
-      </div>
-
-      <!-- User Profile Card in Sidebar -->
-      <div class="profile-card">
-        <span class="avatar avatar-lg" id="user-avatar">YY</span>
-        <div>
-          <strong id="user-display-name">Demo User</strong>
-          <small id="user-display-email">Personal workspace</small>
+        <div class="new-menu" id="new-menu" hidden>
+          <button data-action="new-folder" type="button">
+            <span>📁</span> New folder
+          </button>
+          <button data-action="upload" type="button">
+            <span>⬆</span> Upload files
+          </button>
         </div>
-        <button type="button" id="logout-button" title="Sign out" aria-label="Sign out" onclick="handleLogout()">⎋</button>
-      </div>
-    </aside>
 
-    <!-- Main Workspace -->
-    <main class="main-content">
-      <!-- Topbar Header -->
-      <header class="topbar">
-        <button class="mobile-menu" id="mobile-menu" type="button" aria-label="Toggle menu">☰</button>
-        <label class="search-field" for="search-input">
-          <span>⌕</span>
-          <input id="search-input" type="search" autocomplete="off" placeholder="Search your files and folders" />
-          <kbd>/</kbd>
-        </label>
-        <div class="top-actions">
-          <button class="icon-button" id="help-button" type="button" aria-label="Help" title="Tips & Shortcuts">?</button>
-          <button class="icon-button notification" id="notif-button" type="button" aria-label="Notifications" title="Notifications">♧<i></i></button>
-          <button class="avatar" id="top-avatar" type="button" aria-label="Profile" onclick="handleLogout()" title="Click to Sign Out">DU</button>
+        <!-- Navigation Views -->
+        <nav class="nav-menu">
+          <button class="nav-item active" data-view="drive" type="button">
+            <span>📁</span> My Drive
+          </button>
+          <button class="nav-item" data-view="recent" type="button">
+            <span>◷</span> Recent
+          </button>
+          <button class="nav-item" data-view="starred" type="button">
+            <span>⭐</span> Starred
+          </button>
+          <button class="nav-item" data-view="activity" type="button">
+            <span>🕒</span> Activity Log
+          </button>
+          <button class="nav-item" data-view="trash" type="button">
+            <span>♲</span> Trash
+          </button>
+        </nav>
+
+        <!-- Dynamic Storage Calculator Card -->
+        <div class="storage-card">
+          <div><span>Storage</span><strong id="storage-used">0 KB</strong></div>
+          <div class="storage-track">
+            <i id="storage-progress" style="width: 2%"></i>
+          </div>
+          <p>of 5 GB cloud storage</p>
+          <button
+            id="manage-storage"
+            type="button"
+            onclick="showStorageModal()"
+          >
+            Storage details
+          </button>
         </div>
-      </header>
 
-      <!-- Workspace Area -->
-      <section class="workspace" aria-live="polite">
-        <div class="page-heading">
+        <!-- User Profile Card in Sidebar -->
+        <div class="profile-card">
+          <span class="avatar avatar-lg" id="user-avatar">YY</span>
           <div>
-            <p class="eyebrow" id="view-kicker">PERSONAL WORKSPACE</p>
-            <h1 id="view-title">My Drive</h1>
+            <strong id="user-display-name">Demo User</strong>
+            <small id="user-display-email">Personal workspace</small>
           </div>
-          <div class="heading-actions">
-            <!-- Trash Actions -->
-            <button class="danger-button" id="btn-empty-trash" type="button" style="display: none; padding: 6px 12px; font-size: 12px; background: #fee2e2; color: #dc2626; border-radius: 6px; font-weight: 700;" onclick="handleEmptyTrash()">Empty Trash</button>
-            <!-- Sort Button -->
-            <button class="ghost-button" id="sort-button" type="button" aria-haspopup="true">
-              ↕ <span id="sort-label">Last modified</span>
+          <button
+            type="button"
+            id="logout-button"
+            title="Sign out"
+            aria-label="Sign out"
+            onclick="handleLogout()"
+          >
+            ⎋
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Workspace -->
+      <main class="main-content">
+        <!-- Topbar Header -->
+        <header class="topbar">
+          <button
+            class="mobile-menu"
+            id="mobile-menu"
+            type="button"
+            aria-label="Toggle menu"
+          >
+            ☰
+          </button>
+          <label class="search-field" for="search-input">
+            <span>⌕</span>
+            <input
+              id="search-input"
+              type="search"
+              autocomplete="off"
+              placeholder="Search your files and folders"
+            />
+            <kbd>/</kbd>
+          </label>
+          <div class="top-actions">
+            <button
+              class="icon-button"
+              id="help-button"
+              type="button"
+              aria-label="Help"
+              title="Tips & Shortcuts"
+            >
+              ?
             </button>
-            <div class="sort-menu" id="sort-menu" hidden>
-              <button data-sort="updated" type="button">Last modified</button>
-              <button data-sort="name" type="button">Name</button>
-              <button data-sort="size" type="button">Size</button>
+            <button
+              class="icon-button notification"
+              id="notif-button"
+              type="button"
+              aria-label="Notifications"
+              title="Notifications"
+            >
+              ♧<i></i>
+            </button>
+            <button
+              class="avatar"
+              id="top-avatar"
+              type="button"
+              aria-label="Profile"
+              onclick="handleLogout()"
+              title="Click to Sign Out"
+            >
+              DU
+            </button>
+          </div>
+        </header>
+
+        <!-- Workspace Area -->
+        <section class="workspace" aria-live="polite">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow" id="view-kicker">PERSONAL WORKSPACE</p>
+              <h1 id="view-title">My Drive</h1>
             </div>
-            <button class="view-toggle" id="view-toggle" type="button" aria-label="Switch view layout">☷</button>
+            <div class="heading-actions">
+              <!-- Trash Actions -->
+              <button
+                class="danger-button"
+                id="btn-empty-trash"
+                type="button"
+                style="
+                  display: none;
+                  padding: 6px 12px;
+                  font-size: 12px;
+                  background: #fee2e2;
+                  color: #dc2626;
+                  border-radius: 6px;
+                  font-weight: 700;
+                "
+                onclick="handleEmptyTrash()"
+              >
+                Empty Trash
+              </button>
+              <!-- Sort Button -->
+              <button
+                class="ghost-button"
+                id="sort-button"
+                type="button"
+                aria-haspopup="true"
+              >
+                ↕ <span id="sort-label">Last modified</span>
+              </button>
+              <div class="sort-menu" id="sort-menu" hidden>
+                <button data-sort="updated" type="button">Last modified</button>
+                <button data-sort="name" type="button">Name</button>
+                <button data-sort="size" type="button">Size</button>
+              </div>
+              <button
+                class="view-toggle"
+                id="view-toggle"
+                type="button"
+                aria-label="Switch view layout"
+              >
+                ☷
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- Filter Chips Bar -->
-        <div class="filter-bar" id="filter-bar">
-          <button class="filter-chip active" data-filter="all">All</button>
-          <button class="filter-chip" data-filter="folders">📁 Folders</button>
-          <button class="filter-chip" data-filter="documents">📄 Documents</button>
-          <button class="filter-chip" data-filter="images">🖼 Images</button>
-          <button class="filter-chip" data-filter="media">🎬 Audio & Video</button>
-          <button class="filter-chip" data-filter="starred">⭐ Starred</button>
-        </div>
-
-        <!-- Breadcrumbs Navigation -->
-        <div class="breadcrumbs" id="breadcrumbs" aria-label="Breadcrumb"></div>
-
-        <!-- Drag and Drop Workspace Container -->
-        <div class="drop-target" id="drop-target" tabindex="0" aria-label="File workspace. Drop files here to upload.">
-          <div class="section-row">
-            <h2 id="section-title">Files & Folders</h2>
-            <span id="item-count">0 items</span>
+          <!-- Filter Chips Bar -->
+          <div class="filter-bar" id="filter-bar">
+            <button class="filter-chip active" data-filter="all">All</button>
+            <button class="filter-chip" data-filter="folders">
+              📁 Folders
+            </button>
+            <button class="filter-chip" data-filter="documents">
+              📄 Documents
+            </button>
+            <button class="filter-chip" data-filter="images">🖼 Images</button>
+            <button class="filter-chip" data-filter="media">
+              🎬 Audio & Video
+            </button>
+            <button class="filter-chip" data-filter="starred">
+              ⭐ Starred
+            </button>
           </div>
 
-          <!-- Content Grid Container -->
-          <div class="content-grid" id="content-grid"></div>
+          <!-- Breadcrumbs Navigation -->
+          <div
+            class="breadcrumbs"
+            id="breadcrumbs"
+            aria-label="Breadcrumb"
+          ></div>
 
-          <!-- Empty State -->
-          <div class="empty-state" id="empty-state" hidden>
-            <div class="empty-illustration">☁</div>
-            <h2 id="empty-title">Nothing here yet</h2>
-            <p id="empty-desc">Upload a file or create a folder to get started.</p>
-            <button class="primary-button" data-action="upload" type="button">Upload files</button>
+          <!-- Drag and Drop Workspace Container -->
+          <div
+            class="drop-target"
+            id="drop-target"
+            tabindex="0"
+            aria-label="File workspace. Drop files here to upload."
+          >
+            <div class="section-row">
+              <h2 id="section-title">Files & Folders</h2>
+              <span id="item-count">0 items</span>
+            </div>
+
+            <!-- Content Grid Container -->
+            <div class="content-grid" id="content-grid"></div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state" hidden>
+              <div class="empty-illustration">☁</div>
+              <h2 id="empty-title">Nothing here yet</h2>
+              <p id="empty-desc">
+                Upload a file or create a folder to get started.
+              </p>
+              <button class="primary-button" data-action="upload" type="button">
+                Upload files
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- Hidden File Input for native upload -->
-  <input id="file-input" type="file" multiple hidden />
-  <input id="version-file-input" type="file" hidden />
-
-  <!-- Modals & Overlays -->
-  <div class="modal-backdrop" id="modal-backdrop" hidden></div>
-
-  <!-- New Folder Modal -->
-  <section class="modal" id="folder-modal" role="dialog" aria-modal="true" aria-labelledby="folder-modal-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">ORGANIZE</p>
-    <h2 id="folder-modal-title">New folder</h2>
-    <p class="modal-copy">Give this folder a clear, memorable name.</p>
-    <label for="folder-name">Folder name</label>
-    <input id="folder-name" maxlength="80" placeholder="e.g. Design Assets" />
-    <div class="modal-actions">
-      <button class="text-button" data-close-modal type="button">Cancel</button>
-      <button class="primary-button" id="folder-submit" type="button">Create folder</button>
+        </section>
+      </main>
     </div>
-  </section>
 
-  <!-- Rename Modal -->
-  <section class="modal" id="rename-modal" role="dialog" aria-modal="true" aria-labelledby="rename-modal-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">RENAME</p>
-    <h2 id="rename-modal-title">Rename item</h2>
-    <p class="modal-copy" id="rename-copy">Enter a new name.</p>
-    <label for="rename-input">New name</label>
-    <input id="rename-input" maxlength="80" />
-    <div class="modal-actions">
-      <button class="text-button" data-close-modal type="button">Cancel</button>
-      <button class="primary-button" id="rename-submit" type="button">Save</button>
-    </div>
-  </section>
+    <!-- Hidden File Input for native upload -->
+    <input id="file-input" type="file" multiple hidden />
+    <input id="version-file-input" type="file" hidden />
 
-  <!-- Share Settings Modal -->
-  <section class="modal modal-wide" id="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">SHARING SETTINGS</p>
-    <h2 id="share-title">Share</h2>
-    <p class="modal-copy" id="share-resource">Manage who can view or edit this item.</p>
-    <div class="invite-row">
-      <input id="invite-email" type="email" placeholder="Add people by email" />
-      <select id="invite-role" aria-label="Permission role">
-        <option value="viewer">Viewer</option>
-        <option value="editor">Editor</option>
-      </select>
-      <button id="invite-button" class="primary-button" type="button">Add</button>
-    </div>
-    <div class="share-list" id="share-list"></div>
-    <div class="link-share">
-      <div>
-        <strong>Public Link</strong>
-        <small id="link-summary">Generate a shareable link with optional expiration</small>
+    <!-- Modals & Overlays -->
+    <div class="modal-backdrop" id="modal-backdrop" hidden></div>
+
+    <!-- New Folder Modal -->
+    <section
+      class="modal"
+      id="folder-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="folder-modal-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">ORGANIZE</p>
+      <h2 id="folder-modal-title">New folder</h2>
+      <p class="modal-copy">Give this folder a clear, memorable name.</p>
+      <label for="folder-name">Folder name</label>
+      <input id="folder-name" maxlength="80" placeholder="e.g. Design Assets" />
+      <div class="modal-actions">
+        <button class="text-button" data-close-modal type="button">
+          Cancel
+        </button>
+        <button class="primary-button" id="folder-submit" type="button">
+          Create folder
+        </button>
       </div>
-      <button class="ghost-button" id="create-link-btn" type="button" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff;">⧉ Create link</button>
-    </div>
-    <div class="modal-actions">
-      <button class="primary-button" data-close-modal type="button">Done</button>
-    </div>
-  </section>
+    </section>
 
-  <!-- Move Modal -->
-  <section class="modal modal-wide" id="move-modal" role="dialog" aria-modal="true" aria-labelledby="move-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">ORGANIZE</p>
-    <h2 id="move-title">Move item</h2>
-    <p class="modal-copy">Choose destination folder for <strong id="move-resource"></strong>.</p>
-    <div id="move-folders" class="folder-picker" style="max-height: 220px; overflow-y: auto; margin-bottom: 15px;"></div>
-    <div class="modal-actions">
-      <button class="text-button" data-close-modal type="button">Cancel</button>
-      <button class="primary-button" id="move-submit" type="button">Move here</button>
-    </div>
-  </section>
-
-  <!-- File Preview Modal -->
-  <section class="modal preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">PREVIEW</p>
-    <h2 id="preview-title">File Preview</h2>
-    <div class="preview-body" id="preview-body"></div>
-    <div class="modal-actions" style="justify-content: space-between;">
-      <div id="preview-meta" style="font-size: 12px; color: #7f849b;"></div>
-      <div style="display: flex; gap: 8px;">
-        <button class="text-button" id="preview-btn-version" type="button">Version History</button>
-        <button class="primary-button" id="preview-btn-download" type="button">Download</button>
+    <!-- Rename Modal -->
+    <section
+      class="modal"
+      id="rename-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rename-modal-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">RENAME</p>
+      <h2 id="rename-modal-title">Rename item</h2>
+      <p class="modal-copy" id="rename-copy">Enter a new name.</p>
+      <label for="rename-input">New name</label>
+      <input id="rename-input" maxlength="80" />
+      <div class="modal-actions">
+        <button class="text-button" data-close-modal type="button">
+          Cancel
+        </button>
+        <button class="primary-button" id="rename-submit" type="button">
+          Save
+        </button>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Version History Modal -->
-  <section class="modal modal-wide" id="version-modal" role="dialog" aria-modal="true" aria-labelledby="version-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">VERSIONING</p>
-    <h2 id="version-title">Version History</h2>
-    <p class="modal-copy" id="version-resource">Track all revisions of this file.</p>
-    <button class="primary-button" style="margin-bottom: 16px;" onclick="triggerNewVersionUpload()" type="button">+ Upload New Version</button>
-    <div id="version-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 16px;"></div>
-    <div class="modal-actions">
-      <button class="primary-button" data-close-modal type="button">Close</button>
-    </div>
-  </section>
+    <!-- Share Settings Modal -->
+    <section
+      class="modal modal-wide"
+      id="share-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">SHARING SETTINGS</p>
+      <h2 id="share-title">Share</h2>
+      <p class="modal-copy" id="share-resource">
+        Manage who can view or edit this item.
+      </p>
+      <div class="invite-row">
+        <input
+          id="invite-email"
+          type="email"
+          placeholder="Add people by email"
+        />
+        <select id="invite-role" aria-label="Permission role">
+          <option value="viewer">Viewer</option>
+          <option value="editor">Editor</option>
+        </select>
+        <button id="invite-button" class="primary-button" type="button">
+          Add
+        </button>
+      </div>
+      <div class="share-list" id="share-list"></div>
+      <div class="link-share">
+        <div>
+          <strong>Public Link</strong>
+          <small id="link-summary"
+            >Generate a shareable link with optional expiration</small
+          >
+        </div>
+        <button
+          class="ghost-button"
+          id="create-link-btn"
+          type="button"
+          style="
+            padding: 6px 12px;
+            font-size: 12px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: #fff;
+          "
+        >
+          ⧉ Create link
+        </button>
+      </div>
+      <div class="modal-actions">
+        <button class="primary-button" data-close-modal type="button">
+          Done
+        </button>
+      </div>
+    </section>
 
-  <!-- File Details & Metadata Modal -->
-  <section class="modal" id="details-modal" role="dialog" aria-modal="true" aria-labelledby="details-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">PROPERTIES</p>
-    <h2 id="details-title">Item Details</h2>
-    <div id="details-content" style="font-size: 13px; line-height: 1.8; margin-top: 14px;"></div>
-    <div class="modal-actions">
-      <button class="primary-button" data-close-modal type="button">Done</button>
-    </div>
-  </section>
+    <!-- Move Modal -->
+    <section
+      class="modal modal-wide"
+      id="move-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="move-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">ORGANIZE</p>
+      <h2 id="move-title">Move item</h2>
+      <p class="modal-copy">
+        Choose destination folder for <strong id="move-resource"></strong>.
+      </p>
+      <div
+        id="move-folders"
+        class="folder-picker"
+        style="max-height: 220px; overflow-y: auto; margin-bottom: 15px"
+      ></div>
+      <div class="modal-actions">
+        <button class="text-button" data-close-modal type="button">
+          Cancel
+        </button>
+        <button class="primary-button" id="move-submit" type="button">
+          Move here
+        </button>
+      </div>
+    </section>
 
-  <!-- Storage Breakdown Modal -->
-  <section class="modal" id="storage-modal" role="dialog" aria-modal="true" aria-labelledby="storage-title" hidden>
-    <button class="close-button" data-close-modal type="button" aria-label="Close">×</button>
-    <p class="eyebrow">STORAGE & PLAN</p>
-    <h2 id="storage-title">Storage Breakdown</h2>
-    <div id="storage-details-content" style="margin-top: 14px; font-size: 13px;"></div>
-    <div class="modal-actions">
-      <button class="primary-button" data-close-modal type="button">Close</button>
-    </div>
-  </section>
+    <!-- File Preview Modal -->
+    <section
+      class="modal preview-modal"
+      id="preview-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="preview-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">PREVIEW</p>
+      <h2 id="preview-title">File Preview</h2>
+      <div class="preview-body" id="preview-body"></div>
+      <div class="modal-actions" style="justify-content: space-between">
+        <div id="preview-meta" style="font-size: 12px; color: #7f849b"></div>
+        <div style="display: flex; gap: 8px">
+          <button class="text-button" id="preview-btn-version" type="button">
+            Version History
+          </button>
+          <button
+            class="primary-button"
+            id="preview-btn-download"
+            type="button"
+          >
+            Download
+          </button>
+        </div>
+      </div>
+    </section>
 
-  <!-- Context Menu (Dropdown on 3-dot or right click) -->
-  <div class="context-menu" id="context-menu" hidden></div>
+    <!-- Version History Modal -->
+    <section
+      class="modal modal-wide"
+      id="version-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="version-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">VERSIONING</p>
+      <h2 id="version-title">Version History</h2>
+      <p class="modal-copy" id="version-resource">
+        Track all revisions of this file.
+      </p>
+      <button
+        class="primary-button"
+        style="margin-bottom: 16px"
+        onclick="triggerNewVersionUpload()"
+        type="button"
+      >
+        + Upload New Version
+      </button>
+      <div
+        id="version-list"
+        style="
+          max-height: 250px;
+          overflow-y: auto;
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          margin-bottom: 16px;
+        "
+      ></div>
+      <div class="modal-actions">
+        <button class="primary-button" data-close-modal type="button">
+          Close
+        </button>
+      </div>
+    </section>
 
-  <!-- Toast Notification Container -->
-  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <!-- File Details & Metadata Modal -->
+    <section
+      class="modal"
+      id="details-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="details-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">PROPERTIES</p>
+      <h2 id="details-title">Item Details</h2>
+      <div
+        id="details-content"
+        style="font-size: 13px; line-height: 1.8; margin-top: 14px"
+      ></div>
+      <div class="modal-actions">
+        <button class="primary-button" data-close-modal type="button">
+          Done
+        </button>
+      </div>
+    </section>
 
-  <!-- Application Script -->
-  <script src="app.js"></script>
-</body>
+    <!-- Storage Breakdown Modal -->
+    <section
+      class="modal"
+      id="storage-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="storage-title"
+      hidden
+    >
+      <button
+        class="close-button"
+        data-close-modal
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">STORAGE & PLAN</p>
+      <h2 id="storage-title">Storage Breakdown</h2>
+      <div
+        id="storage-details-content"
+        style="margin-top: 14px; font-size: 13px"
+      ></div>
+      <div class="modal-actions">
+        <button class="primary-button" data-close-modal type="button">
+          Close
+        </button>
+      </div>
+    </section>
+
+    <!-- Context Menu (Dropdown on 3-dot or right click) -->
+    <div class="context-menu" id="context-menu" hidden></div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+
+    <!-- Application Script -->
+    <script src="app.js?v=3"></script>
+  </body>
 </html>
