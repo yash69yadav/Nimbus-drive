@@ -1262,24 +1262,30 @@ h1 {
 </style>
     <style>
       /* Auth Modal Overlay when signed out */
-      .auth-overlay {=
+      .auth-overlay {
         position: fixed;
         inset: 0;
-        z-index: 999;
+        z-index: 99999;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px;
+        min-height: 100vh;
+        width: 100vw;
+        background: radial-gradient(circle at 20% 20%, #4338ca 0%, #1e1b4b 55%, #0f172a 100%);
+        padding: 24px;
+        overflow-y: auto;
+        box-sizing: border-box;
       }
       .auth-card {
         background: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        border-radius: 20px;
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
         width: 100%;
-        max-width: 420px;
-        padding: 36px 32px;
-        animation: authPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        max-width: 430px;
+        padding: 40px 34px;
+        margin: auto;
+        animation: authPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
       }
       @keyframes authPop {
         from { opacity: 0; transform: scale(0.96) translateY(10px); }
