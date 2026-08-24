@@ -190,6 +190,7 @@ async function handleSendOTP() {
     sessionStorage.setItem('otp_phone', phone);
     sessionStorage.setItem('otp_name', name || 'Demo User');
     if (res.otp) sessionStorage.setItem('demo_otp', res.otp);
+    if (res.otpToken) sessionStorage.setItem('otp_token', res.otpToken);
 
     showAuthMessage(`OTP sent! Demo code: ${res.otp}`, 'success');
 
@@ -281,6 +282,7 @@ async function handleVerifyOTP() {
   const otp = inputs.map(i => i.value).join('');
   const phone = sessionStorage.getItem('otp_phone');
   const name = sessionStorage.getItem('otp_name');
+  const otpToken = sessionStorage.getItem('otp_token');
   const btn = $('#btn-verify-otp');
 
   if (otp.length !== 4) {
@@ -293,7 +295,7 @@ async function handleVerifyOTP() {
     btn.textContent = 'Verifying...';
     clearAuthMessage();
 
-    const data = await apiCall('POST', '/api/auth/verify-otp', { phone, otp, name });
+    const data = await apiCall('POST', '/api/auth/verify-otp', { phone, otp, name, otpToken });
     clearInterval(state.timerInterval);
 
     localStorage.setItem('token', data.token);
