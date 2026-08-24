@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Nimbus - Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    .box { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: 20px auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    input { width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; }
+    button { width: 100%; padding: 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+    button:hover { background: #764ba2; }
+    #log { background: #222; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; margin-top: 20px; }
+    .log-line { margin: 2px 0; }
+    .error { color: #f44; }
+    .success { color: #4f4; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>🌩️ Nimbus Drive - Login Test</h1>
+    
+    <input id="email" type="email" placeholder="test@example.com" value="test@example.com">
+    <input id="password" type="password" placeholder="password123" value="password123">
+    <input id="name" type="text" placeholder="Name" value="Demo User">
+    
+    <button onclick="testRegister()">Register</button>
+    <button onclick="testLogin()">Login</button>
+    <button onclick="clearLog()">Clear Log</button>
+    
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:4173';
+    const logDiv = document.getElementById('log');
+
+    function log(msg, type = 'normal') {
+      const line = document.createElement('div');
+      line.className = 'log-line ' + type;
+      line.textContent = msg;
+      logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log('[' + type + ']', msg);
+    }
+
+    function clearLog() {
+      logDiv.innerHTML = '';
+    }
+
+    async function testRegister() {
+      clearLog();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value;
+
+      log(`🔄 Registering: ${email}`, 'normal');
+
+      try {
+        log(`📡 Sending to: ${API_URL}/api/auth/register`, 'normal');
+        
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name })
+        });
+
+        log(`📊 Response Status: ${response.status}`, response.ok ? 'success' : 'error');
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          log(`✅ Success! User ID: ${data.user.id}`, 'success');
+          log(`👤 User: ${data.user.email}`, 'success');
+          localStorage.setItem('token', 'logged-in');
+        } else {
+          log(`❌ Error: ${data.error?.message || JSON.stringify(data)}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ Fetch failed: ${error.message}`, 'error');
+      }
+    }
+
+    async function testLogin() {
+      clearLog();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      log(`🔄 Logging in: ${email}`, 'normal');
+
+      try {
+        log(`📡 Sending to: ${API_URL}/api/auth/login`, 'normal');
+        
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        log(`📊 Response Status: ${response.status}`, response.ok ? 'success' : 'error');
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          log(`✅ Success! User ID: ${data.user.id}`, 'success');
+          log(`👤 User: ${data.user.email}`, 'success');
+          localStorage.setItem('token', 'logged-in');
+        } else {
+          log(`❌ Error: ${data.error?.message || JSON.stringify(data)}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ Fetch failed: ${error.message}`, 'error');
+      }
+    }
+
+    log('✅ Page loaded successfully', 'success');
+    log(`API URL: ${API_URL}`, 'normal');
+  </script>
+</body>
+</html>
