@@ -386,7 +386,10 @@ function handleLogout() {
   localStorage.removeItem('token');
   state.token = null;
   state.user = null;
-  $('#auth-overlay').style.display = 'flex';
+  const overlay = $('#auth-overlay');
+  if (overlay) overlay.style.display = 'flex';
+  const appShell = $('#app-shell');
+  if (appShell) appShell.style.display = 'none';
   switchAuthTab('otp');
 }
 
@@ -400,6 +403,10 @@ function enterWorkspace(user) {
     overlay.style.setProperty('display', 'none', 'important');
     overlay.style.visibility = 'hidden';
     overlay.hidden = true;
+  }
+  const appShell = $('#app-shell');
+  if (appShell) {
+    appShell.style.display = window.innerWidth <= 690 ? 'block' : 'grid';
   }
   document.body.classList.remove('sidebar-open');
 
@@ -1433,10 +1440,16 @@ async function initApp() {
     } catch {
       localStorage.removeItem('token');
       state.token = null;
-      $('#auth-overlay').style.display = 'flex';
+      const overlay = $('#auth-overlay');
+      if (overlay) overlay.style.display = 'flex';
+      const appShell = $('#app-shell');
+      if (appShell) appShell.style.display = 'none';
     }
   } else {
-    $('#auth-overlay').style.display = 'flex';
+    const overlay = $('#auth-overlay');
+    if (overlay) overlay.style.display = 'flex';
+    const appShell = $('#app-shell');
+    if (appShell) appShell.style.display = 'none';
   }
 
   // Global Click and Overlay Handling
