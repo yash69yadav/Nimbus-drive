@@ -42,11 +42,13 @@ app.use((req, res, next) => {
 });
 
 function loadEnvFile() {
-  if (!existsSync('.env')) return;
-  for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
-    const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
-  }
+  try {
+    if (!existsSync('.env')) return;
+    for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
+      if (match && !process.env[match[1]]) process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
+    }
+  } catch {}
 }
 
 function apiError(res, status, code, message) { return res.status(status).json({ error: { code, message } }); }
