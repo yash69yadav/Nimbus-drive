@@ -1422,6 +1422,9 @@ async function initApp() {
     if (!e.target.closest('#context-menu') && !e.target.closest('.more-button')) {
       const cm = $('#context-menu'); if (cm) cm.hidden = true;
     }
+    if (!e.target.closest('.sidebar') && !e.target.closest('#mobile-menu')) {
+      document.body.classList.remove('sidebar-open');
+    }
   });
 
   // Dropdown Toggles
@@ -1470,6 +1473,7 @@ async function initApp() {
     item.addEventListener('click', () => {
       $$('.nav-item').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
+      document.body.classList.remove('sidebar-open');
       state.view = item.dataset.view || 'drive';
       state.folderId = null;
       state.query = '';

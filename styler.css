@@ -1154,17 +1154,34 @@ h1 {
   }
   .sidebar {
     position: fixed;
+    top: 0;
+    bottom: 0;
     left: 0;
-    width: 260px;
+    width: 270px;
+    z-index: 1050;
     transform: translateX(-103%);
-    transition: transform 0.25s ease;
-    box-shadow: 12px 0 35px rgba(36, 39, 72, 0.16);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 12px 0 35px rgba(36, 39, 72, 0.25);
+    background: #ffffff;
   }
   .sidebar-open .sidebar {
     transform: translateX(0);
   }
+  .sidebar-open::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1040;
+    animation: fadeIn 0.2s ease-out;
+  }
   .mobile-menu {
     display: block;
+    cursor: pointer;
+    font-size: 20px;
+  }
+  input, select, textarea {
+    font-size: 16px !important;
   }
   .topbar {
     height: 69px;
