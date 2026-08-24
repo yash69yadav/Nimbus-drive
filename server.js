@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 import { MongoClient, ObjectId, GridFSBucket } from 'mongodb';
 import bcrypt from 'bcryptjs';
@@ -845,25 +846,46 @@ app.get('/api/activities', needDatabase, requireAuth, async (req, res, next) => 
 });
 
 function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-app.use(express.static('.', { dotfiles: 'deny', extensions: ['html'], index: 'index.html', maxAge: 0 }));
+app.use(express.static(path.resolve('.'), { dotfiles: 'deny', extensions: ['html'], index: 'index.html', maxAge: 0 }));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.sendFile(path.resolve('./index.html'));
+});
+
 app.use((error, req, res, next) => {
   console.error(error);
   if (error instanceof multer.MulterError) return apiError(res, 400, 'UPLOAD_ERROR', error.message);
   return apiError(res, 500, 'INTERNAL_ERROR', 'An unexpected error occurred.');
 });
 
-async function start() {
+async function initDb() {
+  if (database) return database;
   if (mongoUri) {
     client = new MongoClient(mongoUri, { serverSelectionTimeoutMS: 8000 });
     await client.connect();
     database = client.db(databaseName);
     bucket = new GridFSBucket(database, { bucketName: 'uploads' });
-    await ensureMongoIndexes(database);
+    try { await ensureMongoIndexes(database); } catch {}
     console.log(`MongoDB connected: ${databaseName}`);
-  } else console.log('MongoDB is not configured; serving the local demo. Copy .env.example to .env to enable the API.');
-  app.listen(port, () => console.log(`Nimbus Drive is running on http://localhost:${port}`));
+  }
+  return database;
 }
-start().catch((error) => {
-  console.error('Could not start Nimbus Drive:', error.message);
-  process.exit(1);
+
+// Auto-connect database for serverless requests
+app.use(async (req, res, next) => {
+  if (!database && mongoUri) {
+    try { await initDb(); } catch (err) { console.error('MongoDB init error:', err); }
+  }
+  next();
 });
+
+if (process.env.VERCEL !== '1') {
+  initDb().then(() => {
+    app.listen(port, () => console.log(`Nimbus Drive is running on http://localhost:${port}`));
+  }).catch((error) => {
+    console.error('Could not start Nimbus Drive:', error.message);
+    app.listen(port, () => console.log(`Nimbus Drive is running without DB on http://localhost:${port}`));
+  });
+}
+
+export default app;
