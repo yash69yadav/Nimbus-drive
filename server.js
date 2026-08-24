@@ -953,9 +953,28 @@ app.get('/api/link/:token', async (req, res, next) => {
 });
 
 function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+app.get('/styler.css', (req, res) => {
+  res.set('Content-Type', 'text/css');
+  res.sendFile(path.resolve('./styler.css'));
+});
+
+app.get('/app.js', (req, res) => {
+  res.set('Content-Type', 'application/javascript');
+  res.sendFile(path.resolve('./app.js'));
+});
+
 app.use(express.static(path.resolve('.'), { dotfiles: 'deny', extensions: ['html'], index: 'index.html', maxAge: 0 }));
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
+  if (req.path === '/styler.css') {
+    res.set('Content-Type', 'text/css');
+    return res.sendFile(path.resolve('./styler.css'));
+  }
+  if (req.path === '/app.js') {
+    res.set('Content-Type', 'application/javascript');
+    return res.sendFile(path.resolve('./app.js'));
+  }
   res.sendFile(path.resolve('./index.html'));
 });
 
