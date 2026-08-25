@@ -918,54 +918,20 @@ function handleLogout() {
 }
 
 // -------------------------------------------------------------
-// Workspace Views & Rendering (Liquid Glass Portal Transition)
+// Workspace Views & Rendering
 // -------------------------------------------------------------
 
-function playSuccessChime() {
-  try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const notes = [523.25, 659.25, 783.99, 987.77, 1046.5]; // C5, E5, G5, B5, C6 Major 7th arpeggio
-    const startTime = ctx.currentTime;
-
-    notes.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const noteStart = startTime + idx * 0.055;
-      const duration = 0.65;
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, noteStart);
-
-      gain.gain.setValueAtTime(0, noteStart);
-      gain.gain.linearRampToValueAtTime(0.12, noteStart + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.001, noteStart + duration);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(noteStart);
-      osc.stop(noteStart + duration);
-    });
-  } catch (e) {
-    // Audio is an optional enhancement
-  }
-}
-
-function enterWorkspace(user, instant = false) {
+function enterWorkspace(user) {
   const overlay = $('#auth-overlay');
+  if (overlay) {
+    overlay.style.setProperty('display', 'none', 'important');
+    overlay.style.visibility = 'hidden';
+    overlay.hidden = true;
+  }
   const appShell = $('#app-shell');
-
   if (appShell) {
     appShell.style.display = window.innerWidth <= 690 ? 'block' : 'grid';
-    if (!instant) {
-      appShell.classList.remove('revealing-workspace');
-      void appShell.offsetWidth; // trigger reflow
-      appShell.classList.add('revealing-workspace');
-    }
   }
-
   document.body.classList.remove('sidebar-open');
 
   const initials = (user.name || 'User')
@@ -985,25 +951,6 @@ function enterWorkspace(user, instant = false) {
   if (userEmail) userEmail.textContent = user.email || 'Personal workspace';
 
   loadDrive();
-
-  if (overlay) {
-    if (instant || overlay.style.display === 'none') {
-      overlay.style.setProperty('display', 'none', 'important');
-      overlay.style.visibility = 'hidden';
-      overlay.hidden = true;
-    } else {
-      celebrateCreaturesSuccess();
-      playSuccessChime();
-      overlay.classList.add('portal-warp');
-      setTimeout(() => {
-        overlay.style.setProperty('display', 'none', 'important');
-        overlay.style.visibility = 'hidden';
-        overlay.hidden = true;
-        overlay.classList.remove('portal-warp');
-        if (appShell) appShell.classList.remove('revealing-workspace');
-      }, 750);
-    }
-  }
 }
 
 async function loadDrive() {
@@ -2041,7 +1988,7 @@ async function initApp() {
     try {
       const data = await apiCall('GET', '/api/auth/me');
       state.user = data.user;
-      enterWorkspace(data.user, true);
+      enterWorkspace(data.user);
     } catch {
       localStorage.removeItem('token');
       state.token = null;
