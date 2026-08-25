@@ -1984,9 +1984,114 @@
         border-radius: 12px;
         font-size: 11px;
       }
+
+      /* Glowing Interactive Custom Cursor */
+      .custom-cursor-dot {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 10px;
+        height: 10px;
+        background: linear-gradient(135deg, #7048e8, #ff6433);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1000000;
+        transform: translate(-50%, -50%);
+        transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    height 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    background 0.2s ease,
+                    opacity 0.2s ease;
+        box-shadow: 0 0 10px rgba(112, 72, 232, 0.75), 0 0 20px rgba(255, 100, 51, 0.45);
+        will-change: transform;
+        opacity: 0;
+      }
+      .custom-cursor-ring {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 36px;
+        height: 36px;
+        border: 1.8px solid rgba(112, 72, 232, 0.55);
+        background: rgba(112, 72, 232, 0.07);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 999999;
+        transform: translate(-50%, -50%);
+        transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                    height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.25s ease,
+                    background-color 0.25s ease,
+                    border-radius 0.25s ease,
+                    opacity 0.25s ease;
+        backdrop-filter: blur(0.5px);
+        will-change: transform;
+        opacity: 0;
+      }
+      .custom-cursor-ring.cursor-hover {
+        width: 52px;
+        height: 52px;
+        border-color: rgba(255, 100, 51, 0.8);
+        background: rgba(255, 100, 51, 0.12);
+        box-shadow: 0 0 22px rgba(255, 100, 51, 0.35);
+      }
+      .custom-cursor-ring.cursor-text {
+        width: 4px;
+        height: 28px;
+        border-radius: 3px;
+        border: none;
+        background: #7048e8;
+        box-shadow: 0 0 12px rgba(112, 72, 232, 0.8);
+      }
+      .custom-cursor-ring.cursor-creature {
+        width: 58px;
+        height: 58px;
+        border-color: #fab005;
+        background: rgba(250, 176, 5, 0.15);
+        box-shadow: 0 0 24px rgba(250, 176, 5, 0.45);
+        animation: cursorPulse 1.4s infinite ease-in-out;
+      }
+      @keyframes cursorPulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.12); }
+      }
+      .cursor-trail-particle {
+        position: fixed;
+        pointer-events: none;
+        z-index: 999998;
+        font-family: inherit;
+        user-select: none;
+        transform: translate(-50%, -50%);
+        transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.65s ease;
+        will-change: transform, opacity;
+      }
+      .cursor-click-ripple {
+        position: fixed;
+        pointer-events: none;
+        z-index: 999998;
+        border-radius: 50%;
+        border: 2px solid rgba(112, 72, 232, 0.8);
+        transform: translate(-50%, -50%) scale(0.2);
+        animation: clickRipple 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+      }
+      @keyframes clickRipple {
+        to {
+          transform: translate(-50%, -50%) scale(2.4);
+          opacity: 0;
+          border-color: rgba(255, 100, 51, 0.2);
+        }
+      }
+      @media (hover: none) and (pointer: coarse) {
+        .custom-cursor-dot, .custom-cursor-ring, .cursor-trail-particle, .cursor-click-ripple {
+          display: none !important;
+        }
+      }
     </style>
   </head>
   <body>
+    <!-- Glowing Interactive Custom Cursor -->
+    <div id="custom-cursor-dot" class="custom-cursor-dot"></div>
+    <div id="custom-cursor-ring" class="custom-cursor-ring"></div>
+
     <!-- Auth Overlay (Shown when signed out) -->
     <div id="auth-overlay" class="auth-overlay">
       <div class="auth-layout-card">

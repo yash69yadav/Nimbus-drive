@@ -332,6 +332,148 @@ function getFileIconInfo(name = '', mime = '') {
 }
 
 // -------------------------------------------------------------
+// Interactive Glowing Cursor & Particle Trail Engine
+// -------------------------------------------------------------
+
+const cursorState = {
+  targetX: window.innerWidth / 2,
+  targetY: window.innerHeight / 2,
+  ringX: window.innerWidth / 2,
+  ringY: window.innerHeight / 2,
+  dotX: window.innerWidth / 2,
+  dotY: window.innerHeight / 2,
+  lastParticleTime: 0,
+  lastParticleX: 0,
+  lastParticleY: 0,
+  initialized: false
+};
+
+function initCustomCursor() {
+  if (cursorState.initialized) return;
+  cursorState.initialized = true;
+
+  const dot = $('#custom-cursor-dot');
+  const ring = $('#custom-cursor-ring');
+  if (!dot || !ring) return;
+
+  window.addEventListener('mousemove', (e) => {
+    cursorState.targetX = e.clientX;
+    cursorState.targetY = e.clientY;
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+
+    // Particle Trail when moving
+    maybeSpawnParticle(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mouseleave', () => {
+    dot.style.opacity = '0';
+    ring.style.opacity = '0';
+  });
+
+  window.addEventListener('mouseenter', () => {
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  });
+
+  // Dynamic Hover Target Detection
+  document.addEventListener('mouseover', (e) => {
+    const interactive = e.target.closest('button, a, input, [role="button"], .auth-tab, .filter-chip, .checkbox-container');
+    const creature = e.target.closest('.creatures-stage, .creatures-scene, #auth-creatures-panel');
+    const textInput = e.target.closest('input[type="text"], input[type="email"], input[type="password"], input[type="tel"]');
+
+    if (textInput) {
+      ring.className = 'custom-cursor-ring cursor-text';
+      dot.style.transform = 'translate(-50%, -50%) scale(0.4)';
+    } else if (creature) {
+      ring.className = 'custom-cursor-ring cursor-creature';
+      dot.style.transform = 'translate(-50%, -50%) scale(1.3)';
+    } else if (interactive) {
+      ring.className = 'custom-cursor-ring cursor-hover';
+      dot.style.transform = 'translate(-50%, -50%) scale(1.4)';
+    } else {
+      ring.className = 'custom-cursor-ring';
+      dot.style.transform = 'translate(-50%, -50%) scale(1)';
+    }
+  });
+
+  // Click Ripple Effect
+  window.addEventListener('mousedown', (e) => {
+    dot.style.transform = 'translate(-50%, -50%) scale(0.6)';
+    createClickRipple(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mouseup', () => {
+    dot.style.transform = 'translate(-50%, -50%) scale(1)';
+  });
+
+  function renderCursor() {
+    cursorState.dotX += (cursorState.targetX - cursorState.dotX) * 0.75;
+    cursorState.dotY += (cursorState.targetY - cursorState.dotY) * 0.75;
+    cursorState.ringX += (cursorState.targetX - cursorState.ringX) * 0.18;
+    cursorState.ringY += (cursorState.targetY - cursorState.ringY) * 0.18;
+
+    dot.style.left = `${cursorState.dotX}px`;
+    dot.style.top = `${cursorState.dotY}px`;
+    ring.style.left = `${cursorState.ringX}px`;
+    ring.style.top = `${cursorState.ringY}px`;
+
+    requestAnimationFrame(renderCursor);
+  }
+  requestAnimationFrame(renderCursor);
+}
+
+function maybeSpawnParticle(x, y) {
+  const now = performance.now();
+  const dist = Math.hypot(x - cursorState.lastParticleX, y - cursorState.lastParticleY);
+  if (now - cursorState.lastParticleTime < 40 || dist < 10) return;
+
+  cursorState.lastParticleTime = now;
+  cursorState.lastParticleX = x;
+  cursorState.lastParticleY = y;
+
+  const particle = document.createElement('span');
+  particle.className = 'cursor-trail-particle';
+  const symbols = ['✦', '✧', '★', '•'];
+  const colors = ['#7048e8', '#ff6433', '#fab005', '#60a5fa', '#a855f7'];
+  const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+
+  particle.textContent = symbol;
+  particle.style.color = color;
+  particle.style.left = `${x}px`;
+  particle.style.top = `${y}px`;
+  particle.style.fontSize = `${Math.random() * 6 + 9}px`;
+  particle.style.textShadow = `0 0 8px ${color}`;
+  particle.style.opacity = '0.9';
+
+  document.body.appendChild(particle);
+
+  const angle = Math.random() * Math.PI * 2;
+  const drift = Math.random() * 18 + 6;
+  const dx = Math.cos(angle) * drift;
+  const dy = Math.sin(angle) * drift - 8;
+
+  requestAnimationFrame(() => {
+    particle.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2)`;
+    particle.style.opacity = '0';
+  });
+
+  setTimeout(() => particle.remove(), 650);
+}
+
+function createClickRipple(x, y) {
+  const ripple = document.createElement('div');
+  ripple.className = 'cursor-click-ripple';
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  ripple.style.width = '36px';
+  ripple.style.height = '36px';
+  document.body.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 550);
+}
+
+// -------------------------------------------------------------
 // Authentication & Interactive Creature Animation Engine
 // -------------------------------------------------------------
 
@@ -354,6 +496,7 @@ const creatureState = {
 };
 
 function initCreatures() {
+  initCustomCursor();
   const overlay = $('#auth-overlay');
   const svg = $('#creatures-svg');
   if (!svg || !overlay) return;
@@ -2151,6 +2294,7 @@ async function initApp() {
 }
 
 // Window global exports
+window.initCustomCursor = initCustomCursor;
 window.initCreatures = initCreatures;
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.switchAuthTab = switchAuthTab;
