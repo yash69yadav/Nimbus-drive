@@ -918,85 +918,38 @@ function handleLogout() {
 }
 
 // -------------------------------------------------------------
-// Workspace Views & Rendering (Cinematic 3D Paper Tear Transition)
+// Workspace Views & Rendering (Liquid Glass Portal Transition)
 // -------------------------------------------------------------
 
-function playPaperRipSound() {
+function playSuccessChime() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
-    const duration = 0.45;
-    const bufferSize = Math.floor(ctx.sampleRate * duration);
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
+    const notes = [523.25, 659.25, 783.99, 987.77, 1046.5]; // C5, E5, G5, B5, C6 Major 7th arpeggio
+    const startTime = ctx.currentTime;
 
-    for (let i = 0; i < bufferSize; i++) {
-      const t = i / bufferSize;
-      const envelope = Math.pow(1 - t, 1.4) * Math.sin(t * Math.PI * 0.9);
-      const tearFibers = Math.sin(i * 0.08) * 0.3 + (Math.random() * 2 - 1) * 0.7;
-      const fiberSnap = Math.random() > 0.82 ? (Math.random() * 2 - 1) * 1.6 : 0;
-      data[i] = (tearFibers + fiberSnap) * envelope * 0.25;
-    }
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const noteStart = startTime + idx * 0.055;
+      const duration = 0.65;
 
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, noteStart);
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(1800, ctx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + duration);
-    filter.Q.value = 1.8;
+      gain.gain.setValueAtTime(0, noteStart);
+      gain.gain.linearRampToValueAtTime(0.12, noteStart + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, noteStart + duration);
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    noise.start();
+      osc.start(noteStart);
+      osc.stop(noteStart + duration);
+    });
   } catch (e) {
     // Audio is an optional enhancement
-  }
-}
-
-function spawnTearPaperScraps() {
-  const centerX = window.innerWidth / 2;
-  const count = 30;
-  const colors = ['#ffffff', '#f4f4f6', '#6d52f6', '#ff6433', '#fab005', '#e2e8f0', '#7671e1'];
-
-  for (let i = 0; i < count; i++) {
-    const scrap = document.createElement('div');
-    scrap.className = 'paper-scrap';
-    const w = Math.random() * 9 + 4;
-    const h = Math.random() * 14 + 6;
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const startY = Math.random() * (window.innerHeight * 0.8) + (window.innerHeight * 0.1);
-    const isLeft = Math.random() > 0.5;
-
-    scrap.style.width = `${w}px`;
-    scrap.style.height = `${h}px`;
-    scrap.style.backgroundColor = color;
-    scrap.style.left = `${centerX + (Math.random() * 24 - 12)}px`;
-    scrap.style.top = `${startY}px`;
-    scrap.style.transform = `rotate(${Math.random() * 360}deg)`;
-    scrap.style.boxShadow = '0 2px 6px rgba(0,0,0,0.18)';
-
-    document.body.appendChild(scrap);
-
-    const destX = isLeft
-      ? -(Math.random() * 260 + 90)
-      : Math.random() * 260 + 90;
-    const destY = Math.random() * 200 - 100 + (Math.random() * 120);
-    const rot = Math.random() * 720 - 360;
-
-    requestAnimationFrame(() => {
-      scrap.style.transform = `translate(${destX}px, ${destY}px) rotate(${rot}deg) scale(${Math.random() * 0.4 + 0.3})`;
-      scrap.style.opacity = '0';
-    });
-
-    setTimeout(() => scrap.remove(), 950);
   }
 }
 
@@ -1040,16 +993,15 @@ function enterWorkspace(user, instant = false) {
       overlay.hidden = true;
     } else {
       celebrateCreaturesSuccess();
-      playPaperRipSound();
-      spawnTearPaperScraps();
-      overlay.classList.add('tearing-paper');
+      playSuccessChime();
+      overlay.classList.add('portal-warp');
       setTimeout(() => {
         overlay.style.setProperty('display', 'none', 'important');
         overlay.style.visibility = 'hidden';
         overlay.hidden = true;
-        overlay.classList.remove('tearing-paper');
+        overlay.classList.remove('portal-warp');
         if (appShell) appShell.classList.remove('revealing-workspace');
-      }, 950);
+      }, 750);
     }
   }
 }
