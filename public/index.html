@@ -1984,75 +1984,9 @@
         border-radius: 12px;
         font-size: 11px;
       }
-
-      /* Aesthetic Minimalist Designer Cursor */
-      .custom-cursor-pointer {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 22px;
-        height: 22px;
-        pointer-events: none;
-        z-index: 1000000;
-        transform: translate(-3px, -3px);
-        filter: drop-shadow(0 2.5px 5px rgba(0, 0, 0, 0.22));
-        will-change: transform;
-        opacity: 0;
-        transition: opacity 0.2s ease, transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
-      }
-      .custom-cursor-pointer svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-      }
-      .custom-cursor-pointer.cursor-hover {
-        transform: translate(-3px, -3px) scale(1.15);
-      }
-      .custom-cursor-pointer.cursor-click {
-        transform: translate(-3px, -3px) scale(0.9);
-      }
-      .custom-cursor-ring {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 28px;
-        height: 28px;
-        border: 1px solid rgba(24, 24, 27, 0.25);
-        background: rgba(24, 24, 27, 0.02);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 999999;
-        transform: translate(-50%, -50%);
-        transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                    height 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                    border-color 0.2s ease,
-                    background-color 0.2s ease,
-                    opacity 0.2s ease;
-        will-change: transform;
-        opacity: 0;
-      }
-      .custom-cursor-ring.cursor-hover {
-        width: 42px;
-        height: 42px;
-        border-color: rgba(24, 24, 27, 0.45);
-        background: rgba(24, 24, 27, 0.04);
-      }
-      @media (hover: none) and (pointer: coarse) {
-        .custom-cursor-pointer, .custom-cursor-ring {
-          display: none !important;
-        }
-      }
     </style>
   </head>
   <body>
-    <!-- Aesthetic Minimalist Designer Cursor -->
-    <div id="custom-cursor-pointer" class="custom-cursor-pointer">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4.5 3L19.5 12L11.5 13.5L8 20.5L4.5 3Z" fill="#18181b" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <div id="custom-cursor-ring" class="custom-cursor-ring"></div>
-
     <!-- Auth Overlay (Shown when signed out) -->
     <div id="auth-overlay" class="auth-overlay">
       <div class="auth-layout-card">

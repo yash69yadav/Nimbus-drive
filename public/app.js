@@ -332,83 +332,6 @@ function getFileIconInfo(name = '', mime = '') {
 }
 
 // -------------------------------------------------------------
-// Aesthetic Minimalist Designer Cursor Engine
-// -------------------------------------------------------------
-
-const cursorState = {
-  targetX: window.innerWidth / 2,
-  targetY: window.innerHeight / 2,
-  ptrX: window.innerWidth / 2,
-  ptrY: window.innerHeight / 2,
-  ringX: window.innerWidth / 2,
-  ringY: window.innerHeight / 2,
-  initialized: false
-};
-
-function initCustomCursor() {
-  if (cursorState.initialized) return;
-  cursorState.initialized = true;
-
-  const ptr = $('#custom-cursor-pointer');
-  const ring = $('#custom-cursor-ring');
-  if (!ptr || !ring) return;
-
-  window.addEventListener('mousemove', (e) => {
-    cursorState.targetX = e.clientX;
-    cursorState.targetY = e.clientY;
-    ptr.style.opacity = '1';
-    ring.style.opacity = '1';
-  });
-
-  window.addEventListener('mouseleave', () => {
-    ptr.style.opacity = '0';
-    ring.style.opacity = '0';
-  });
-
-  window.addEventListener('mouseenter', () => {
-    ptr.style.opacity = '1';
-    ring.style.opacity = '1';
-  });
-
-  // Hover detection for interactive items
-  document.addEventListener('mouseover', (e) => {
-    const interactive = e.target.closest('button, a, input, [role="button"], .auth-tab, .filter-chip, .checkbox-container, .creatures-stage');
-    if (interactive) {
-      ptr.classList.add('cursor-hover');
-      ring.classList.add('cursor-hover');
-    } else {
-      ptr.classList.remove('cursor-hover');
-      ring.classList.remove('cursor-hover');
-    }
-  });
-
-  window.addEventListener('mousedown', () => {
-    ptr.classList.add('cursor-click');
-  });
-
-  window.addEventListener('mouseup', () => {
-    ptr.classList.remove('cursor-click');
-  });
-
-  function renderCursor() {
-    // Instant snappy pointer
-    cursorState.ptrX += (cursorState.targetX - cursorState.ptrX) * 0.9;
-    cursorState.ptrY += (cursorState.targetY - cursorState.ptrY) * 0.9;
-    // Smooth trailing ring
-    cursorState.ringX += (cursorState.targetX - cursorState.ringX) * 0.22;
-    cursorState.ringY += (cursorState.targetY - cursorState.ringY) * 0.22;
-
-    ptr.style.left = `${cursorState.ptrX}px`;
-    ptr.style.top = `${cursorState.ptrY}px`;
-    ring.style.left = `${cursorState.ringX}px`;
-    ring.style.top = `${cursorState.ringY}px`;
-
-    requestAnimationFrame(renderCursor);
-  }
-  requestAnimationFrame(renderCursor);
-}
-
-// -------------------------------------------------------------
 // Authentication & Interactive Creature Animation Engine
 // -------------------------------------------------------------
 
@@ -431,7 +354,6 @@ const creatureState = {
 };
 
 function initCreatures() {
-  initCustomCursor();
   const overlay = $('#auth-overlay');
   const svg = $('#creatures-svg');
   if (!svg || !overlay) return;
@@ -2229,7 +2151,6 @@ async function initApp() {
 }
 
 // Window global exports
-window.initCustomCursor = initCustomCursor;
 window.initCreatures = initCreatures;
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.switchAuthTab = switchAuthTab;
