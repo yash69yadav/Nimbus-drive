@@ -2,11 +2,18 @@
   "name": "nimbus-drive",
   "version": "1.0.0",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test tests/project.test.mjs"
+  },
+  "author": "Yash Yadav <https://github.com/yash69yadav>",
+  "homepage": "https://nimbus-drive-gules.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yash69yadav/Nimbus-drive.git"
   },
   "engines": {
     "node": ">=18"

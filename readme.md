@@ -96,3 +96,11 @@ For detailed architectural deep dives, database Entity-Relationship Diagrams (ER
 - **Developer**: Yash Yadav
 - **GitHub**: [@yash69yadav](https://github.com/yash69yadav)
 - **Live Deployment**: [https://nimbus-drive-gules.vercel.app](https://nimbus-drive-gules.vercel.app)
+
+---
+
+## 📄 Copyright & License
+
+Copyright © 2024–2026 **Yash Yadav**. All Rights Reserved.  
+Unauthorized copying, modifying, distributing, or commercial use of this project or its source code is strictly prohibited. See [LICENSE](./LICENSE) for details.
+
