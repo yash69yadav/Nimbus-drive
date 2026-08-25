@@ -332,8 +332,294 @@ function getFileIconInfo(name = '', mime = '') {
 }
 
 // -------------------------------------------------------------
-// Authentication
+// Authentication & Interactive Creature Animation Engine
 // -------------------------------------------------------------
+
+const creatureState = {
+  mode: 'idle', // 'idle' | 'password' | 'peek'
+  mouseX: window.innerWidth / 2,
+  mouseY: window.innerHeight / 2,
+  targetSvgX: 190,
+  targetSvgY: 160,
+  purplePupil: { x: 0, y: 0 },
+  blackPupil: { x: 0, y: 0 },
+  orangePupil: { x: 0, y: 0 },
+  yellowPupil: { x: 0, y: 0 },
+  purpleTilt: 0,
+  blackTilt: 0,
+  rafId: null,
+  isPasswordVisible: false,
+  isTypingEmail: false,
+  initialized: false
+};
+
+function initCreatures() {
+  const overlay = $('#auth-overlay');
+  const svg = $('#creatures-svg');
+  if (!svg || !overlay) return;
+
+  if (creatureState.initialized) return;
+  creatureState.initialized = true;
+
+  const emailInput = $('#email-input');
+  const passwordInput = $('#password-input');
+  const regNameInput = $('#register-name-input');
+
+  // Global mousemove tracking across window
+  window.addEventListener('mousemove', (e) => {
+    creatureState.mouseX = e.clientX;
+    creatureState.mouseY = e.clientY;
+    if (creatureState.mode !== 'password') {
+      updateSvgTargetFromCoords(e.clientX, e.clientY);
+    }
+  });
+
+  // Touch tracking for mobile devices
+  window.addEventListener('touchmove', (e) => {
+    if (e.touches && e.touches[0]) {
+      creatureState.mouseX = e.touches[0].clientX;
+      creatureState.mouseY = e.touches[0].clientY;
+      if (creatureState.mode !== 'password') {
+        updateSvgTargetFromCoords(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }
+  }, { passive: true });
+
+  // Email input focus and typing tracking (watching caret/typing)
+  if (emailInput) {
+    emailInput.addEventListener('focus', () => {
+      creatureState.isTypingEmail = true;
+      trackEmailCaret(emailInput);
+    });
+    emailInput.addEventListener('input', () => {
+      trackEmailCaret(emailInput);
+    });
+    emailInput.addEventListener('blur', () => {
+      creatureState.isTypingEmail = false;
+      updateSvgTargetFromCoords(creatureState.mouseX, creatureState.mouseY);
+    });
+  }
+
+  if (regNameInput) {
+    regNameInput.addEventListener('focus', () => {
+      creatureState.isTypingEmail = true;
+      trackEmailCaret(regNameInput);
+    });
+    regNameInput.addEventListener('input', () => {
+      trackEmailCaret(regNameInput);
+    });
+    regNameInput.addEventListener('blur', () => {
+      creatureState.isTypingEmail = false;
+      updateSvgTargetFromCoords(creatureState.mouseX, creatureState.mouseY);
+    });
+  }
+
+  // Password Input ("No See" Hide Eyes Mode)
+  if (passwordInput) {
+    passwordInput.addEventListener('focus', () => {
+      setCreaturePasswordMode(true);
+    });
+    passwordInput.addEventListener('input', () => {
+      if (creatureState.mode !== 'password' && creatureState.mode !== 'peek') {
+        setCreaturePasswordMode(true);
+      }
+    });
+    passwordInput.addEventListener('blur', () => {
+      setCreaturePasswordMode(false);
+    });
+  }
+
+  startCreatureLoop();
+}
+
+function updateSvgTargetFromCoords(clientX, clientY) {
+  const svg = $('#creatures-svg');
+  if (!svg) return;
+  try {
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+    creatureState.targetSvgX = svgPt.x;
+    creatureState.targetSvgY = svgPt.y;
+  } catch {
+    const rect = svg.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      creatureState.targetSvgX = ((clientX - rect.left) / rect.width) * 380;
+      creatureState.targetSvgY = ((clientY - rect.top) / rect.height) * 370;
+    }
+  }
+}
+
+function trackEmailCaret(inputEl) {
+  if (!inputEl) return;
+  const rect = inputEl.getBoundingClientRect();
+  const textLen = inputEl.value.length;
+  const progress = Math.min(1, Math.max(0, textLen / 28));
+  const caretX = rect.left + 24 + progress * (rect.width - 48);
+  const caretY = rect.top + rect.height / 2;
+  updateSvgTargetFromCoords(caretX, caretY);
+}
+
+function setCreaturePasswordMode(active) {
+  const overlay = $('#auth-overlay');
+  if (!overlay) return;
+
+  if (active) {
+    if (creatureState.isPasswordVisible) {
+      creatureState.mode = 'peek';
+      overlay.classList.add('creatures-password-mode', 'creatures-peek-mode');
+    } else {
+      creatureState.mode = 'password';
+      overlay.classList.add('creatures-password-mode');
+      overlay.classList.remove('creatures-peek-mode');
+    }
+  } else {
+    creatureState.mode = 'idle';
+    overlay.classList.remove('creatures-password-mode', 'creatures-peek-mode');
+    updateSvgTargetFromCoords(creatureState.mouseX, creatureState.mouseY);
+  }
+}
+
+function togglePasswordVisibility() {
+  const passwordInput = $('#password-input');
+  const toggleBtn = $('#password-toggle-btn');
+  const overlay = $('#auth-overlay');
+  if (!passwordInput) return;
+
+  creatureState.isPasswordVisible = !creatureState.isPasswordVisible;
+  passwordInput.type = creatureState.isPasswordVisible ? 'text' : 'password';
+
+  if (toggleBtn) {
+    const eyeShow = toggleBtn.querySelector('.eye-show');
+    const eyeHide = toggleBtn.querySelector('.eye-hide');
+    if (eyeShow && eyeHide) {
+      eyeShow.style.display = creatureState.isPasswordVisible ? 'none' : 'block';
+      eyeHide.style.display = creatureState.isPasswordVisible ? 'block' : 'none';
+    }
+  }
+
+  if (document.activeElement === passwordInput || overlay?.classList.contains('creatures-password-mode')) {
+    if (creatureState.isPasswordVisible) {
+      creatureState.mode = 'peek';
+      overlay?.classList.add('creatures-peek-mode');
+    } else {
+      creatureState.mode = 'password';
+      overlay?.classList.remove('creatures-peek-mode');
+    }
+  }
+}
+
+function celebrateCreaturesSuccess() {
+  const overlay = $('#auth-overlay');
+  if (overlay) {
+    overlay.classList.add('creatures-cheer');
+    setTimeout(() => overlay.classList.remove('creatures-cheer'), 1200);
+  }
+}
+
+function shakeCreaturesError() {
+  const overlay = $('#auth-overlay');
+  if (overlay) {
+    overlay.classList.add('creatures-shake');
+    setTimeout(() => overlay.classList.remove('creatures-shake'), 600);
+  }
+}
+
+function startCreatureLoop() {
+  if (creatureState.rafId) cancelAnimationFrame(creatureState.rafId);
+
+  const purplePupilL = $('#purple-pupil-l');
+  const purplePupilR = $('#purple-pupil-r');
+  const blackPupilL = $('#black-pupil-l');
+  const blackPupilR = $('#black-pupil-r');
+  const orangeEyeL = $('#orange-eye-l');
+  const orangeEyeR = $('#orange-eye-r');
+  const yellowPupil = $('#yellow-pupil');
+
+  const groupPurple = $('#group-purple');
+  const groupBlack = $('#group-black');
+
+  function calculatePupilOffset(centerX, centerY, targetX, targetY, maxRadius) {
+    const dx = targetX - centerX;
+    const dy = targetY - centerY;
+    const angle = Math.atan2(dy, dx);
+    const dist = Math.hypot(dx, dy);
+    const offset = Math.min(dist / 14, maxRadius);
+    return {
+      x: Math.cos(angle) * offset,
+      y: Math.sin(angle) * offset
+    };
+  }
+
+  function loop() {
+    if (creatureState.mode !== 'password') {
+      const tx = creatureState.targetSvgX;
+      const ty = creatureState.targetSvgY;
+
+      // 1. Purple creature pupil (eye center ~ 132, 110)
+      const pTarget = calculatePupilOffset(132, 110, tx, ty, 3.8);
+      creatureState.purplePupil.x += (pTarget.x - creatureState.purplePupil.x) * 0.18;
+      creatureState.purplePupil.y += (pTarget.y - creatureState.purplePupil.y) * 0.18;
+      if (purplePupilL) {
+        purplePupilL.setAttribute('cx', (116 + creatureState.purplePupil.x).toFixed(2));
+        purplePupilL.setAttribute('cy', (110 + creatureState.purplePupil.y).toFixed(2));
+      }
+      if (purplePupilR) {
+        purplePupilR.setAttribute('cx', (148 + creatureState.purplePupil.x).toFixed(2));
+        purplePupilR.setAttribute('cy', (110 + creatureState.purplePupil.y).toFixed(2));
+      }
+
+      // 2. Black creature pupil (eye center ~ 219, 178)
+      const bTarget = calculatePupilOffset(219, 178, tx, ty, 4.4);
+      creatureState.blackPupil.x += (bTarget.x - creatureState.blackPupil.x) * 0.18;
+      creatureState.blackPupil.y += (bTarget.y - creatureState.blackPupil.y) * 0.18;
+      if (blackPupilL) {
+        blackPupilL.setAttribute('cx', (204 + creatureState.blackPupil.x).toFixed(2));
+        blackPupilL.setAttribute('cy', (178 + creatureState.blackPupil.y).toFixed(2));
+      }
+      if (blackPupilR) {
+        blackPupilR.setAttribute('cx', (234 + creatureState.blackPupil.x).toFixed(2));
+        blackPupilR.setAttribute('cy', (178 + creatureState.blackPupil.y).toFixed(2));
+      }
+
+      // 3. Orange creature eyes (eye center ~ 133, 274)
+      const oTarget = calculatePupilOffset(133, 274, tx, ty, 3.2);
+      creatureState.orangePupil.x += (oTarget.x - creatureState.orangePupil.x) * 0.18;
+      creatureState.orangePupil.y += (oTarget.y - creatureState.orangePupil.y) * 0.18;
+      if (orangeEyeL) {
+        orangeEyeL.setAttribute('cx', (114 + creatureState.orangePupil.x).toFixed(2));
+        orangeEyeL.setAttribute('cy', (275 + creatureState.orangePupil.y).toFixed(2));
+      }
+      if (orangeEyeR) {
+        orangeEyeR.setAttribute('cx', (152 + creatureState.orangePupil.x).toFixed(2));
+        orangeEyeR.setAttribute('cy', (272 + creatureState.orangePupil.y).toFixed(2));
+      }
+
+      // 4. Yellow creature pupil (eye center ~ 276, 230)
+      const yTarget = calculatePupilOffset(276, 230, tx, ty, 3.0);
+      creatureState.yellowPupil.x += (yTarget.x - creatureState.yellowPupil.x) * 0.18;
+      creatureState.yellowPupil.y += (yTarget.y - creatureState.yellowPupil.y) * 0.18;
+      if (yellowPupil) {
+        yellowPupil.setAttribute('cx', (274 + creatureState.yellowPupil.x).toFixed(2));
+        yellowPupil.setAttribute('cy', (229 + creatureState.yellowPupil.y).toFixed(2));
+      }
+
+      // Subtle body parallax lean
+      const pTiltTarget = Math.max(-5, Math.min(5, (tx - 138) * 0.015));
+      creatureState.purpleTilt += (pTiltTarget - creatureState.purpleTilt) * 0.1;
+      if (groupPurple) groupPurple.style.transform = `rotate(${creatureState.purpleTilt.toFixed(2)}deg)`;
+
+      const bTiltTarget = Math.max(-4, Math.min(4, (tx - 219) * 0.012));
+      creatureState.blackTilt += (bTiltTarget - creatureState.blackTilt) * 0.1;
+      if (groupBlack) groupBlack.style.transform = `rotate(${creatureState.blackTilt.toFixed(2)}deg)`;
+    }
+
+    creatureState.rafId = requestAnimationFrame(loop);
+  }
+
+  loop();
+}
 
 function showAuthMessage(msg, type = 'error') {
   const box = $('#auth-message');
@@ -351,19 +637,25 @@ function clearAuthMessage() {
 function switchAuthTab(tab) {
   clearAuthMessage();
   if (tab === 'otp') {
-    $('#tab-otp').classList.add('active');
-    $('#tab-email').classList.remove('active');
-    $('#otp-phone-view').style.display = 'block';
-    $('#otp-verify-view').style.display = 'none';
-    $('#email-auth-view').style.display = 'none';
-    $('#auth-subtitle').textContent = 'Sign in with your phone number';
+    $('#tab-otp')?.classList.add('active');
+    $('#tab-email')?.classList.remove('active');
+    if ($('#otp-phone-view')) $('#otp-phone-view').style.display = 'block';
+    if ($('#otp-verify-view')) $('#otp-verify-view').style.display = 'none';
+    if ($('#email-auth-view')) $('#email-auth-view').style.display = 'none';
+    const authTitle = $('#auth-title');
+    if (authTitle) authTitle.textContent = 'Phone Login';
+    const authSubtitle = $('#auth-subtitle');
+    if (authSubtitle) authSubtitle.textContent = 'Sign in with your phone number';
   } else {
-    $('#tab-email').classList.add('active');
-    $('#tab-otp').classList.remove('active');
-    $('#otp-phone-view').style.display = 'none';
-    $('#otp-verify-view').style.display = 'none';
-    $('#email-auth-view').style.display = 'block';
-    $('#auth-subtitle').textContent = 'Sign in with your email & password';
+    $('#tab-email')?.classList.add('active');
+    $('#tab-otp')?.classList.remove('active');
+    if ($('#otp-phone-view')) $('#otp-phone-view').style.display = 'none';
+    if ($('#otp-verify-view')) $('#otp-verify-view').style.display = 'none';
+    if ($('#email-auth-view')) $('#email-auth-view').style.display = 'block';
+    const authTitle = $('#auth-title');
+    if (authTitle) authTitle.textContent = isEmailRegister ? 'Create Account' : 'Welcome back!';
+    const authSubtitle = $('#auth-subtitle');
+    if (authSubtitle) authSubtitle.textContent = isEmailRegister ? 'Sign up to start saving and sharing files' : 'Please enter your details';
   }
 }
 
@@ -373,6 +665,7 @@ async function handleSendOTP() {
   const btn = $('#btn-send-otp');
 
   if (!phone) {
+    shakeCreaturesError();
     showAuthMessage('Please enter a phone number', 'error');
     return;
   }
@@ -392,17 +685,21 @@ async function handleSendOTP() {
 
     $('#otp-phone-view').style.display = 'none';
     $('#otp-verify-view').style.display = 'block';
-    $('#auth-subtitle').textContent = 'Enter the 4-digit code';
+    const authSubtitle = $('#auth-subtitle');
+    if (authSubtitle) authSubtitle.textContent = 'Enter the 4-digit code';
 
     if (res.otp) {
-      $('#demo-pill').style.display = 'block';
-      $('#demo-code-val').textContent = res.otp;
+      const demoPill = $('#demo-pill');
+      if (demoPill) demoPill.style.display = 'block';
+      const demoCodeVal = $('#demo-code-val');
+      if (demoCodeVal) demoCodeVal.textContent = res.otp;
     }
 
     startOtpCountdown();
     setupOtpInputs();
     $('#otp-digit-0')?.focus();
   } catch (err) {
+    shakeCreaturesError();
     showAuthMessage(err.message, 'error');
   } finally {
     btn.disabled = false;
@@ -469,7 +766,8 @@ function backToPhoneView() {
   clearInterval(state.timerInterval);
   $('#otp-verify-view').style.display = 'none';
   $('#otp-phone-view').style.display = 'block';
-  $('#auth-subtitle').textContent = 'Sign in with your phone number';
+  const authSubtitle = $('#auth-subtitle');
+  if (authSubtitle) authSubtitle.textContent = 'Sign in with your phone number';
   clearAuthMessage();
 }
 
@@ -482,6 +780,7 @@ async function handleVerifyOTP() {
   const btn = $('#btn-verify-otp');
 
   if (otp.length !== 4) {
+    shakeCreaturesError();
     showAuthMessage('Please enter all 4 digits', 'error');
     return;
   }
@@ -497,9 +796,11 @@ async function handleVerifyOTP() {
     state.token = data.token;
     state.user = data.user;
 
+    celebrateCreaturesSuccess();
     showAuthMessage('Verification successful!', 'success');
-    setTimeout(() => enterWorkspace(data.user), 300);
+    setTimeout(() => enterWorkspace(data.user), 400);
   } catch (err) {
+    shakeCreaturesError();
     showAuthMessage(err.message, 'error');
     if (btn) { btn.disabled = false; btn.textContent = 'Verify & Sign In'; }
   }
@@ -508,6 +809,7 @@ async function handleVerifyOTP() {
 async function handleInstantDemoLogin() {
   clearAuthMessage();
   showAuthMessage('Signing in as Demo User...', 'success');
+  celebrateCreaturesSuccess();
   try {
     const data = await apiCall('POST', '/api/auth/verify-otp', {
       phone: '+1234567890',
@@ -517,45 +819,61 @@ async function handleInstantDemoLogin() {
     localStorage.setItem('token', data.token);
     state.token = data.token;
     state.user = data.user;
-    enterWorkspace(data.user);
+    setTimeout(() => enterWorkspace(data.user), 300);
   } catch (err) {
-    // Client-side instant offline fallback
+    // Client-side instant fallback
     const fallbackUser = { id: 'user_demo_1', name: 'Demo User', email: 'demo@nimbus.local' };
     state.user = fallbackUser;
-    enterWorkspace(fallbackUser);
+    setTimeout(() => enterWorkspace(fallbackUser), 300);
   }
 }
 
 let isEmailRegister = false;
 function toggleRegisterMode() {
   isEmailRegister = !isEmailRegister;
-  $('#register-name-field').style.display = isEmailRegister ? 'block' : 'none';
-  $('#btn-email-auth').textContent = isEmailRegister ? 'Create Account' : 'Sign In';
-  $('#btn-toggle-register').textContent = isEmailRegister ? 'Already have an account? Sign In' : 'Need an account? Register';
+  const regField = $('#register-name-field');
+  if (regField) regField.style.display = isEmailRegister ? 'block' : 'none';
+  const authTitle = $('#auth-title');
+  if (authTitle) authTitle.textContent = isEmailRegister ? 'Create Account' : 'Welcome back!';
+  const authSubtitle = $('#auth-subtitle');
+  if (authSubtitle) authSubtitle.textContent = isEmailRegister ? 'Sign up to start saving and sharing files' : 'Please enter your details';
+  const btnAuth = $('#btn-email-auth');
+  if (btnAuth) btnAuth.textContent = isEmailRegister ? 'Create Account' : 'Log In';
+  const togglePrompt = $('#toggle-prompt-text');
+  if (togglePrompt) togglePrompt.textContent = isEmailRegister ? 'Already have an account?' : "Don't have an account?";
+  const toggleBtn = $('#btn-toggle-register');
+  if (toggleBtn) toggleBtn.textContent = isEmailRegister ? 'Log In' : 'Sign Up';
+  clearAuthMessage();
 }
 
 async function handleEmailAuth() {
-  const email = $('#email-input').value.trim();
-  const password = $('#password-input').value;
-  const name = $('#register-name-input').value.trim();
+  const email = $('#email-input')?.value.trim();
+  const password = $('#password-input')?.value;
+  const name = $('#register-name-input')?.value.trim();
   const btn = $('#btn-email-auth');
 
   if (!email || !password) {
+    shakeCreaturesError();
     showAuthMessage('Email and password required', 'error');
     return;
   }
 
   try {
-    btn.disabled = true;
-    btn.textContent = isEmailRegister ? 'Creating...' : 'Signing in...';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = isEmailRegister ? 'Creating...' : 'Signing in...';
+    }
     clearAuthMessage();
 
     let data;
     if (isEmailRegister) {
       if (password.length < 8) {
+        shakeCreaturesError();
         showAuthMessage('Password must be at least 8 characters', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Create Account';
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+        }
         return;
       }
       data = await apiCall('POST', '/api/auth/register', { email, password, name: name || 'Demo User' });
@@ -567,13 +885,17 @@ async function handleEmailAuth() {
     state.token = data.token;
     state.user = data.user;
 
+    celebrateCreaturesSuccess();
     showAuthMessage('Login successful!', 'success');
-    setTimeout(() => enterWorkspace(data.user), 400);
+    setTimeout(() => enterWorkspace(data.user), 450);
   } catch (err) {
+    shakeCreaturesError();
     showAuthMessage(err.message, 'error');
   } finally {
-    btn.disabled = false;
-    btn.textContent = isEmailRegister ? 'Create Account' : 'Sign In';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = isEmailRegister ? 'Create Account' : 'Log In';
+    }
   }
 }
 
@@ -583,10 +905,16 @@ function handleLogout() {
   state.token = null;
   state.user = null;
   const overlay = $('#auth-overlay');
-  if (overlay) overlay.style.display = 'flex';
+  if (overlay) {
+    overlay.style.display = 'flex';
+    overlay.style.visibility = 'visible';
+    overlay.hidden = false;
+  }
   const appShell = $('#app-shell');
   if (appShell) appShell.style.display = 'none';
-  switchAuthTab('otp');
+  switchAuthTab('email');
+  setCreaturePasswordMode(false);
+  initCreatures();
 }
 
 // -------------------------------------------------------------
@@ -1668,12 +1996,14 @@ async function initApp() {
       if (overlay) overlay.style.display = 'flex';
       const appShell = $('#app-shell');
       if (appShell) appShell.style.display = 'none';
+      initCreatures();
     }
   } else {
     const overlay = $('#auth-overlay');
     if (overlay) overlay.style.display = 'flex';
     const appShell = $('#app-shell');
     if (appShell) appShell.style.display = 'none';
+    initCreatures();
   }
 
   // Global Click and Overlay Handling
@@ -1821,6 +2151,8 @@ async function initApp() {
 }
 
 // Window global exports
+window.initCreatures = initCreatures;
+window.togglePasswordVisibility = togglePasswordVisibility;
 window.switchAuthTab = switchAuthTab;
 window.handleSendOTP = handleSendOTP;
 window.handleVerifyOTP = handleVerifyOTP;

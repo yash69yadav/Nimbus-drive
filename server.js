@@ -31,6 +31,14 @@ const memoryStore = {
       name: 'Demo User',
       passwordHash: bcrypt.hashSync('password123', 8),
       createdAt: new Date()
+    },
+    {
+      _id: 'user_demo_2',
+      email: 'test@example.com',
+      phone: '+1234567891',
+      name: 'Demo User',
+      passwordHash: bcrypt.hashSync('password123', 8),
+      createdAt: new Date()
     }
   ],
   folders: [
