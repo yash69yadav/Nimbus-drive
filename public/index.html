@@ -1985,111 +1985,72 @@
         font-size: 11px;
       }
 
-      /* Glowing Interactive Custom Cursor */
-      .custom-cursor-dot {
+      /* Aesthetic Minimalist Designer Cursor */
+      .custom-cursor-pointer {
         position: fixed;
         top: 0;
         left: 0;
-        width: 10px;
-        height: 10px;
-        background: linear-gradient(135deg, #7048e8, #ff6433);
-        border-radius: 50%;
+        width: 22px;
+        height: 22px;
         pointer-events: none;
         z-index: 1000000;
-        transform: translate(-50%, -50%);
-        transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                    height 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                    background 0.2s ease,
-                    opacity 0.2s ease;
-        box-shadow: 0 0 10px rgba(112, 72, 232, 0.75), 0 0 20px rgba(255, 100, 51, 0.45);
+        transform: translate(-3px, -3px);
+        filter: drop-shadow(0 2.5px 5px rgba(0, 0, 0, 0.22));
         will-change: transform;
         opacity: 0;
+        transition: opacity 0.2s ease, transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .custom-cursor-pointer svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .custom-cursor-pointer.cursor-hover {
+        transform: translate(-3px, -3px) scale(1.15);
+      }
+      .custom-cursor-pointer.cursor-click {
+        transform: translate(-3px, -3px) scale(0.9);
       }
       .custom-cursor-ring {
         position: fixed;
         top: 0;
         left: 0;
-        width: 36px;
-        height: 36px;
-        border: 1.8px solid rgba(112, 72, 232, 0.55);
-        background: rgba(112, 72, 232, 0.07);
+        width: 28px;
+        height: 28px;
+        border: 1px solid rgba(24, 24, 27, 0.25);
+        background: rgba(24, 24, 27, 0.02);
         border-radius: 50%;
         pointer-events: none;
         z-index: 999999;
         transform: translate(-50%, -50%);
-        transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                    height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                    border-color 0.25s ease,
-                    background-color 0.25s ease,
-                    border-radius 0.25s ease,
-                    opacity 0.25s ease;
-        backdrop-filter: blur(0.5px);
+        transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    height 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.2s ease,
+                    background-color 0.2s ease,
+                    opacity 0.2s ease;
         will-change: transform;
         opacity: 0;
       }
       .custom-cursor-ring.cursor-hover {
-        width: 52px;
-        height: 52px;
-        border-color: rgba(255, 100, 51, 0.8);
-        background: rgba(255, 100, 51, 0.12);
-        box-shadow: 0 0 22px rgba(255, 100, 51, 0.35);
-      }
-      .custom-cursor-ring.cursor-text {
-        width: 4px;
-        height: 28px;
-        border-radius: 3px;
-        border: none;
-        background: #7048e8;
-        box-shadow: 0 0 12px rgba(112, 72, 232, 0.8);
-      }
-      .custom-cursor-ring.cursor-creature {
-        width: 58px;
-        height: 58px;
-        border-color: #fab005;
-        background: rgba(250, 176, 5, 0.15);
-        box-shadow: 0 0 24px rgba(250, 176, 5, 0.45);
-        animation: cursorPulse 1.4s infinite ease-in-out;
-      }
-      @keyframes cursorPulse {
-        0%, 100% { transform: translate(-50%, -50%) scale(1); }
-        50% { transform: translate(-50%, -50%) scale(1.12); }
-      }
-      .cursor-trail-particle {
-        position: fixed;
-        pointer-events: none;
-        z-index: 999998;
-        font-family: inherit;
-        user-select: none;
-        transform: translate(-50%, -50%);
-        transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.65s ease;
-        will-change: transform, opacity;
-      }
-      .cursor-click-ripple {
-        position: fixed;
-        pointer-events: none;
-        z-index: 999998;
-        border-radius: 50%;
-        border: 2px solid rgba(112, 72, 232, 0.8);
-        transform: translate(-50%, -50%) scale(0.2);
-        animation: clickRipple 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
-      }
-      @keyframes clickRipple {
-        to {
-          transform: translate(-50%, -50%) scale(2.4);
-          opacity: 0;
-          border-color: rgba(255, 100, 51, 0.2);
-        }
+        width: 42px;
+        height: 42px;
+        border-color: rgba(24, 24, 27, 0.45);
+        background: rgba(24, 24, 27, 0.04);
       }
       @media (hover: none) and (pointer: coarse) {
-        .custom-cursor-dot, .custom-cursor-ring, .cursor-trail-particle, .cursor-click-ripple {
+        .custom-cursor-pointer, .custom-cursor-ring {
           display: none !important;
         }
       }
     </style>
   </head>
   <body>
-    <!-- Glowing Interactive Custom Cursor -->
-    <div id="custom-cursor-dot" class="custom-cursor-dot"></div>
+    <!-- Aesthetic Minimalist Designer Cursor -->
+    <div id="custom-cursor-pointer" class="custom-cursor-pointer">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.5 3L19.5 12L11.5 13.5L8 20.5L4.5 3Z" fill="#18181b" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <div id="custom-cursor-ring" class="custom-cursor-ring"></div>
 
     <!-- Auth Overlay (Shown when signed out) -->
