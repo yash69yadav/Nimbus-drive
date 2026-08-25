@@ -918,20 +918,56 @@ function handleLogout() {
 }
 
 // -------------------------------------------------------------
-// Workspace Views & Rendering
+// Workspace Views & Rendering (Paper Tear Transition)
 // -------------------------------------------------------------
 
-function enterWorkspace(user) {
-  const overlay = $('#auth-overlay');
-  if (overlay) {
-    overlay.style.setProperty('display', 'none', 'important');
-    overlay.style.visibility = 'hidden';
-    overlay.hidden = true;
+function playPaperRipSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const duration = 0.38;
+    const bufferSize = Math.floor(ctx.sampleRate * duration);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      const envelope = Math.pow(1 - t, 1.6) * Math.sin(t * Math.PI);
+      const crackle = Math.random() > 0.78 ? (Math.random() * 2 - 1) * 1.4 : (Math.random() * 2 - 1) * 0.4;
+      data[i] = crackle * envelope * 0.2;
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1600, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + duration);
+    filter.Q.value = 2.2;
+
+    noise.connect(filter);
+    filter.connect(ctx.destination);
+    noise.start();
+  } catch (e) {
+    // Audio is an optional enhancement
   }
+}
+
+function enterWorkspace(user, instant = false) {
+  const overlay = $('#auth-overlay');
   const appShell = $('#app-shell');
+
   if (appShell) {
     appShell.style.display = window.innerWidth <= 690 ? 'block' : 'grid';
+    if (!instant) {
+      appShell.classList.remove('revealing-workspace');
+      void appShell.offsetWidth; // trigger reflow
+      appShell.classList.add('revealing-workspace');
+    }
   }
+
   document.body.classList.remove('sidebar-open');
 
   const initials = (user.name || 'User')
@@ -951,6 +987,24 @@ function enterWorkspace(user) {
   if (userEmail) userEmail.textContent = user.email || 'Personal workspace';
 
   loadDrive();
+
+  if (overlay) {
+    if (instant || overlay.style.display === 'none') {
+      overlay.style.setProperty('display', 'none', 'important');
+      overlay.style.visibility = 'hidden';
+      overlay.hidden = true;
+    } else {
+      playPaperRipSound();
+      overlay.classList.add('tearing-paper');
+      setTimeout(() => {
+        overlay.style.setProperty('display', 'none', 'important');
+        overlay.style.visibility = 'hidden';
+        overlay.hidden = true;
+        overlay.classList.remove('tearing-paper');
+        if (appShell) appShell.classList.remove('revealing-workspace');
+      }, 850);
+    }
+  }
 }
 
 async function loadDrive() {
@@ -1988,7 +2042,7 @@ async function initApp() {
     try {
       const data = await apiCall('GET', '/api/auth/me');
       state.user = data.user;
-      enterWorkspace(data.user);
+      enterWorkspace(data.user, true);
     } catch {
       localStorage.removeItem('token');
       state.token = null;
